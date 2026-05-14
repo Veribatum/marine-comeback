@@ -261,23 +261,18 @@ class BaseLevelScene extends Phaser.Scene {
     // Visual ground strip
 const gTex = this.textures.exists('floor_real') ? 'floor_real' : 'ground';
 
-// One single visual row of ground, aligned under the player's feet.
-// Wider/taller display makes the ground read as a chunky platform instead of tiny repeated rows.
-const groundVisual = this.add.tileSprite(
+// Use one stretched image instead of tileSprite.
+// This prevents the texture from disappearing or repeating into tiny rows.
+const groundVisual = this.add.image(
   this.levelWidth / 2,
-  H - 98,
-  this.levelWidth,
-  70,
+  H - 92,
   gTex
 );
 
 groundVisual.setDepth(8);
+groundVisual.setDisplaySize(this.levelWidth, 64);
 
-// IMPORTANT: scale UP the tile texture so it does not repeat into multiple tiny rows.
-groundVisual.tileScaleX = 2.2;
-groundVisual.tileScaleY = 2.2;
-
-    // Elevated platforms using real texture
+// Elevated platforms using real texture
     if(platforms) {
       platforms.forEach(p=>{
         for(let i=0;i<p.tiles;i++) {
