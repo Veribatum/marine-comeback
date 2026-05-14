@@ -261,28 +261,29 @@ class BaseLevelScene extends Phaser.Scene {
     // Visual ground strip
 const gTex = this.textures.exists('floor_real') ? 'floor_real' : 'ground_plain';
 
-// Large chunky platform tiles that sit directly under the player's feet.
+// Chunky repeated platform tiles.
+// Use the full useful platform section instead of a thin cropped slice.
 const groundFrame = this.textures.get(gTex).getSourceImage();
 
 const cropX = 0;
-const cropY = gTex === 'floor_real' ? 39 : 13;
+
+// floor_real has a lot of empty padding above/below the real platform art.
+// This crop keeps the top walking surface AND the stone face/depth.
+const cropY = gTex === 'floor_real' ? Math.floor(groundFrame.height * 0.40) : 0;
 const cropW = groundFrame.width;
-const cropH = gTex === 'floor_real' ? 27 : 14;
+const cropH = gTex === 'floor_real' ? Math.floor(groundFrame.height * 0.28) : groundFrame.height;
 
-// MUCH larger tiles
-const visualTileW = 520;
-const visualTileH = 170;
+// Bigger tiles, fewer repeats.
+const visualTileW = 460;
+const visualTileH = 95;
 
-// Raise floor upward so player visually stands on it
-const groundY = H - 18;
+// Raise the platform so the TOP of the tile sits under the player's feet.
+const groundY = H - 76;
 
-for (let x = visualTileW / 2 - 40; x < this.levelWidth + visualTileW; x += visualTileW - 18) {
+for (let x = visualTileW / 2 - 30; x < this.levelWidth + visualTileW; x += visualTileW - 8) {
   const groundTile = this.add.image(x, groundY, gTex);
-
   groundTile.setCrop(cropX, cropY, cropW, cropH);
-
   groundTile.setDisplaySize(visualTileW, visualTileH);
-
   groundTile.setDepth(8);
 }
 
