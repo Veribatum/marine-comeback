@@ -252,18 +252,38 @@ class BaseLevelScene extends Phaser.Scene {
 
   createGround(platforms) {
     this.platforms = this.physics.add.staticGroup();
-    for(let x=0;x<=this.levelWidth+64;x+=32) {
-      this.platforms.create(x+16,H-72,'ground').setScale(1).refreshBody();
+
+    // Single invisible physics ground across full level width
+    const groundBody = this.add.rectangle(this.levelWidth/2, H-72, this.levelWidth+200, 80, 0x000000, 0);
+    this.physics.add.existing(groundBody, true); // true = static
+    this.platforms.add(groundBody);
+
+    // Visual ground — one tall strip using floor_real texture
+    // Use a single tileSprite with the tile sized to fill naturally
+    if(this.textures.exists('floor_real')) {
+      this.add.tileSprite(this.levelWidth/2, H-72, this.levelWidth, 80, 'floor_real').setDepth(8);
+    } else {
+      const g = this.add.graphics().setDepth(8);
+      g.fillStyle(0x3d2e1a); g.fillRect(0, H-112, this.levelWidth, 80);
+      g.fillStyle(0x2a1f0e); g.fillRect(0, H-112, this.levelWidth, 8);
     }
+
+    // Elevated platforms
     if(platforms) {
       platforms.forEach(p=>{
         for(let i=0;i<p.tiles;i++) {
-          this.platforms.create(p.x+i*32+16,p.y,'platform_block').refreshBody();
+          const tile = this.add.rectangle(p.x+i*32+16, p.y, 32, 16, 0x5a4428);
+          tile.setDepth(9);
+          this.physics.add.existing(tile, true);
+          this.platforms.add(tile);
         }
+        // Visual platform strip
+        const pw = p.tiles*32;
+        const pg = this.add.graphics().setDepth(9);
+        pg.fillStyle(0x5a4428); pg.fillRect(p.x, p.y-8, pw, 16);
+        pg.fillStyle(0x3d2e1a); pg.fillRect(p.x, p.y-8, pw, 4);
       });
     }
-    // Visual ground strip
-    this.add.tileSprite(this.levelWidth/2,H-72,this.levelWidth,80,'ground_plain').setDepth(8);
   }
 
   createPlayer(x,y) {
@@ -596,51 +616,68 @@ class BaseLevelScene extends Phaser.Scene {
 class Level0Scene extends BaseLevelScene {
   constructor() { super('Level0'); }
   create() {
-    this.initLevel({title:'THE APARTMENT',flavor:'"Time to get moving."',width:W*2});
+    this.initLevel({title:'THE APARTMENT',flavor:'"Time to get moving."',width:W*1.5});
     GameState.currentLevel=0;
 
-    // Background
-    const bg=this.add.graphics().setDepth(0);
-    bg.fillGradientStyle(0x1a1008,0x1a1008,0x0d0804,0x0d0804,1); bg.fillRect(0,0,this.levelWidth,H);
-    bg.fillStyle(0x2a1f10); bg.fillRect(0,H*0.1,this.levelWidth,H*0.55);
-    bg.fillStyle(0x111122,0.3);
-    for(let i=0;i<8;i++) bg.fillRect(i*220+40,H*0.15,100,70);
+    // Background - apartment wall, full level width, scrolls with camera
+    const bg=this.add.graphics().setDepth(0).setScrollFactor(1);
+    // Floor
+    bg.fillStyle(0x0d0804); bg.fillRect(0,0,this.levelWidth,H);
+    // Upper wall color
+    bg.fillStyle(0x2a1a0a); bg.fillRect(0,0,this.levelWidth,H*0.7);
+    // Baseboard
+    bg.fillStyle(0x1a0e06); bg.fillRect(0,H*0.68,this.levelWidth,8);
+    // Windows - glowing faintly
+    for(let i=0;i<8;i++) {
+      bg.fillStyle(0x223355); bg.fillRect(i*180+40,40,110,70);
+      bg.fillStyle(0xffdd88,0.08); bg.fillRect(i*180+40,40,110,70);
+      bg.fillStyle(0x000000,0.4); bg.fillRect(i*180+44,44,102,62);
+      // Window frame lines
+      bg.fillStyle(0x334466,0.5);
+      bg.fillRect(i*180+40+55,44,2,62); // vertical divider
+      bg.fillRect(i*180+44,44+31,102,2); // horizontal divider
+    }
 
     this.createGround(null);
 
-    // Apartment props (behind player depth 4)
-    this.add.image(280,H-128,'prop_couch').setDepth(4).setScale(0.55);
-    this.add.image(520,H-138,'prop_tv').setDepth(4).setScale(0.55);
-    this.add.image(850,H-128,'prop_couch').setDepth(4).setScale(0.55);
-    this.add.image(1100,H-138,'prop_tv').setDepth(4).setScale(0.55);
+    // Ground Y for props sitting on floor
+    const GY = H-112; // top surface of ground (physics ground at H-72, tile 80px tall)
 
-    // Floor junk
-    this.add.image(120,H-118,'soda_can').setDepth(9).setScale(1.2);
-    this.add.image(160,H-116,'soda_can').setDepth(9).setScale(0.9).setAngle(25);
-    this.add.image(420,H-118,'pizza_box').setDepth(9).setScale(1.4);
-    this.add.image(700,H-118,'soda_can').setDepth(9).setScale(1.1).setAngle(-15);
-    this.add.image(1000,H-118,'pizza_box').setDepth(9).setScale(1.2);
-    this.add.image(1200,H-116,'soda_can').setDepth(9).setScale(1.0).setAngle(10);
+    // Apartment props - large, sitting right on ground
+    this.add.image(260, GY-42,'prop_couch').setDepth(8).setScale(1.1);
+    this.add.image(510, GY-46,'prop_tv').setDepth(8).setScale(1.1);
+    this.add.image(780, GY-42,'prop_couch').setDepth(8).setScale(1.1).setFlipX(true);
+    this.add.image(1000, GY-46,'prop_tv').setDepth(8).setScale(1.1);
 
-    // Doors - start (came from) and end (exit)
-    this.add.image(40,H-118,'apt_door').setDepth(4).setScale(0.55);
-    this.add.image(this.levelWidth-50,H-118,'apt_door').setDepth(9).setScale(0.55).setFlipX(true);
-    this.add.text(this.levelWidth-50,H-185,'EXIT ->',{fontSize:'11px',fontFamily:'Impact, Arial Black',color:'#ffaa00',stroke:'#000',strokeThickness:2}).setDepth(10).setOrigin(0.5);
+    // Floor junk scattered between furniture
+    this.add.image(130, GY-14,'soda_can').setDepth(9).setScale(1.3);
+    this.add.image(170, GY-12,'soda_can').setDepth(9).setScale(1.0).setAngle(35);
+    this.add.image(380, GY-12,'pizza_box').setDepth(9).setScale(1.5);
+    this.add.image(620, GY-12,'pizza_box').setDepth(9).setScale(1.3).setAngle(-5);
+    this.add.image(870, GY-14,'soda_can').setDepth(9).setScale(1.1).setAngle(-20);
 
-    this.exitX = this.levelWidth - 80;
+    // Doors
+    this.add.image(35, GY-55,'apt_door').setDepth(4).setScale(0.52);
+    this.add.image(this.levelWidth-40, GY-55,'apt_door').setDepth(9).setScale(0.52).setFlipX(true);
+    this.add.text(this.levelWidth-40, GY-130,'EXIT ->',{fontSize:'11px',fontFamily:'Impact, Arial Black',color:'#ffaa00',stroke:'#000',strokeThickness:2}).setDepth(10).setOrigin(0.5);
 
-    this.createPlayer(80,H-148);
+    this.exitX = this.levelWidth - 70;
+
+    this.createPlayer(80, GY-72);
     this.player.setDepth(10);
     this.createBullets();
     this.createHUD();
     this.createMobileControls();
     this.createKeyboard();
 
-    // Tutorial slimes
+    // Tutorial slimes - fewer, more spread out
     this.enemies=this.physics.add.group();
-    [350,600,900].forEach(x=>{
-      const s=this.enemies.create(x,H-148,'slime_a');
-      s.hp=2; s.points=50; s.hitRadius=14; s.type='slime';
+    [320, 560, 800].forEach(x=>{
+      const s=this.enemies.create(x, GY-20,'slime_a');
+      s.hp=2; s.points=50; s.hitRadius=22; s.type='slime';
+      s.idleTimer=0; s.idleFrame=0;
+      s.setDisplaySize(44,30);
+      s.setDepth(12); // in front of ground props (8) and player (10)... wait, behind player
       s.setVelocityX(-40); s.body.setGravityY(400); s.body.setSize(20,16);
       this.physics.add.collider(s,this.platforms);
     });
@@ -682,47 +719,50 @@ class Level1Scene extends BaseLevelScene {
     this.initLevel({title:'DAD BOD DISTRICT',flavor:'"Get moving."',width:W*5});
     GameState.currentLevel=1;
 
-    // Far background - apocalyptic sunset
-    this.add.tileSprite(W/2,H*0.35,W,H*0.7,'bg_level1_far').setScrollFactor(0).setDepth(0);
+    const GY = H-112; // top surface of ground
 
-    // Dark overlay
+    // Far background sky - fill full height so no bottom edge shows
+    this.add.tileSprite(W/2, H/2, W, H, 'bg_level1_far').setScrollFactor(0).setDepth(0);
+
+    // Gradient fade at bottom to hide sky/ground seam
     const ov=this.add.graphics().setScrollFactor(0).setDepth(1);
-    ov.fillGradientStyle(0x000000,0x000000,0x08030e,0x08030e,0,0,0.6,0.6);
-    ov.fillRect(0,H*0.55,W,H*0.45);
+    ov.fillGradientStyle(0x000000,0x000000,0x000000,0x000000,0,0,0.85,0.85);
+    ov.fillRect(0,H*0.45,W,H*0.55);
 
-    // Skyline silhouette parallax
-    this.add.tileSprite(W/2,H*0.52,W,200,'bg_level1_skyline').setScrollFactor(0.15).setDepth(2);
+    // City skyline - sits just above ground, parallax slow
+    this.add.tileSprite(W/2, GY-60, W, 160, 'bg_level1_skyline').setScrollFactor(0.2).setDepth(2);
 
+    // Ground
     this.createGround([
-      {x:300,y:H-190,tiles:4},{x:600,y:H-230,tiles:3},{x:900,y:H-190,tiles:5},
-      {x:1300,y:H-250,tiles:4},{x:1700,y:H-210,tiles:6},{x:2100,y:H-250,tiles:4},
-      {x:2500,y:H-210,tiles:5},{x:2900,y:H-250,tiles:4},{x:3200,y:H-190,tiles:6},{x:3600,y:H-230,tiles:4},
+      {x:300,y:H-160,tiles:4},{x:600,y:H-185,tiles:3},{x:900,y:H-160,tiles:5},
+      {x:1300,y:H-185,tiles:4},{x:1700,y:H-165,tiles:6},{x:2100,y:H-185,tiles:4},
+      {x:2500,y:H-165,tiles:5},{x:2900,y:H-185,tiles:4},{x:3200,y:H-160,tiles:6},{x:3600,y:H-185,tiles:4},
     ]);
 
-    // Background props (depth 4-6)
-    [[700,H-220,'prop_billboard_noex'],[1800,H-220,'prop_billboard_gym'],[2900,H-220,'prop_billboard_noex']].forEach(([x,y,t])=>{
-      this.add.image(x,y,t).setDepth(4).setScrollFactor(0.7).setScale(0.8);
+    // Billboards - depth 3, behind skyline layer, scroll with level slightly
+    [[700,GY-130,'prop_billboard_noex'],[1800,GY-130,'prop_billboard_gym'],[2900,GY-130,'prop_billboard_noex']].forEach(([x,y,t])=>{
+      this.add.image(x,y,t).setDepth(3).setScrollFactor(0.5).setScale(0.75);
     });
 
-    // Mid props
-    this.add.image(2000,H-118,'prop_treadmill').setDepth(6).setScale(0.55);
-    this.add.image(3700,H-150,'prop_fence_gate').setDepth(5).setScale(0.6);
+    // Ground-level props - sit ON the walkway (depth 9, same as player layer)
+    this.add.image(2000, GY-38,'prop_treadmill').setDepth(9).setScale(0.55);
+    this.add.image(3700, GY-50,'prop_fence_gate').setDepth(9).setScale(0.6);
 
-    // Vending machines
-    [[500,H-112],[1300,H-115],[2100,H-112],[3200,H-112]].forEach(([x,y])=>{
-      this.add.image(x,y,'prop_vending_chips').setDepth(6).setScale(0.55);
+    // Vending machines ON the ground
+    [[500,GY-38],[1300,GY-40],[2100,GY-38],[3200,GY-38]].forEach(([x,y])=>{
+      this.add.image(x,y,'prop_vending_chips').setDepth(9).setScale(0.55);
     });
 
     // Exit gate
     this.exitX = this.levelWidth - 160;
-    this.add.image(this.exitX+80,H-150,'exit_gate').setDepth(5).setScale(0.85);
-    const gp=this.add.graphics().setDepth(6);
-    gp.fillStyle(0xff8800,0.15); gp.fillRect(this.exitX,H-240,160,180);
+    this.add.image(this.exitX+80, GY-60,'exit_gate').setDepth(9).setScale(0.85);
+    const gp=this.add.graphics().setDepth(10);
+    gp.fillStyle(0xff8800,0.15); gp.fillRect(this.exitX,GY-160,160,160);
     this.tweens.add({targets:gp,alpha:0.3,duration:600,yoyo:true,repeat:-1});
 
-    // Foreground props (depth 30 - in front of player)
-    [400,900,1500,2200,2800,3400].forEach(x=>this.add.image(x,H-116,'prop_barricade').setDepth(30).setScale(0.7));
-    [250,650,1100,1700,2400,3000,3600].forEach(x=>this.add.image(x,H-108,'prop_cone').setDepth(30).setScale(0.6));
+    // Foreground barricades depth 8 - BEHIND player so player runs past them
+    [400,900,1500,2200,2800,3400].forEach(x=>this.add.image(x,GY-26,'prop_barricade').setDepth(8).setScale(0.8));
+    [250,650,1100,1700,2400,3000,3600].forEach(x=>this.add.image(x,GY-14,'prop_cone').setDepth(8).setScale(0.7));
 
     // Steam vents
     [800,1600,2400,3200].forEach(x=>{
@@ -744,22 +784,26 @@ class Level1Scene extends BaseLevelScene {
     this.enemies=this.physics.add.group();
     // Slimes
     [200,500,800,1100,1400,1700,2000,2300,2600,2900,3200,3500].forEach(x=>{
-      const s=this.enemies.create(x,H-148,'slime_a');
-      s.hp=2; s.points=100; s.hitRadius=14; s.type='slime';
+      const s=this.enemies.create(x,H-110,'slime_a');
+      s.hp=2; s.points=100; s.hitRadius=22; s.type='slime';
+      s.idleTimer=0; s.idleFrame=0;
+      s.setDisplaySize(44,30); s.setDepth(9);
       s.setVelocityX(Phaser.Math.Between(30,60)*(Math.random()>0.5?1:-1));
       s.body.setGravityY(400); s.body.setSize(20,16);
     });
     // Bats
     [400,700,1000,1400,1800,2200,2600,3000,3400].forEach(x=>{
-      const b=this.enemies.create(x,H-240,'bat_a');
+      const b=this.enemies.create(x,H-200,'bat_a');
       b.hp=1; b.points=150; b.hitRadius=16; b.type='bat';
-      b.startY=H-240+Phaser.Math.Between(-40,40); b.swoopTimer=Phaser.Math.Between(1000,3000); b.swooping=false;
+      b.startY=H-200+Phaser.Math.Between(-30,30); b.swoopTimer=Phaser.Math.Between(1000,3000); b.swooping=false;
+      b.setDepth(9);
     });
     // Drones
     [600,1100,1600,2100,2600,3100].forEach(x=>{
-      const d=this.enemies.create(x,H-260,'drone_a');
+      const d=this.enemies.create(x,H-220,'drone_a');
       d.hp=2; d.points=200; d.hitRadius=14; d.type='drone';
-      d.hoverY=H-260+Phaser.Math.Between(-30,30); d.shootTimer=Phaser.Math.Between(2000,4000); d.hovDir=Math.random()>0.5?1:-1;
+      d.hoverY=H-220+Phaser.Math.Between(-20,20); d.shootTimer=Phaser.Math.Between(2000,4000); d.hovDir=Math.random()>0.5?1:-1;
+      d.setDepth(9);
     });
 
     // Barrels
@@ -804,6 +848,7 @@ class Level1Scene extends BaseLevelScene {
           e.idleTimer+=delta;
           if(e.idleTimer>600){ e.idleFrame=(e.idleFrame||0)===0?1:0; e.idleTimer=0; }
           e.setTexture(e.idleFrame===0?'slime_a':'slime_b');
+          e.setDisplaySize(44,30).setDepth(9);
         }
         if(e.type==='bat'){
           if(!e.wingTimer) e.wingTimer=0;
