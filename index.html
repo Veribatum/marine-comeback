@@ -258,14 +258,22 @@ class BaseLevelScene extends Phaser.Scene {
     this.physics.add.existing(groundBody, true); // true = static
     this.platforms.add(groundBody);
 
-    // Visual ground strip — keep it visible and stable on mobile WebGL
-    // Do NOT use setTileScale here; the real floor asset is already large.
-    const gTex = this.textures.exists('floor_real') ? 'floor_real' : 'ground';
-    const groundVisual = this.add.tileSprite(this.levelWidth/2, H-72, this.levelWidth, 96, gTex);
-    groundVisual.setDepth(8);
-    groundVisual.tileScaleX = 1;
-    groundVisual.tileScaleY = 1;
-    groundVisual.setDisplaySize(this.levelWidth, 96);
+    // Visual ground strip
+const gTex = this.textures.exists('floor_real') ? 'floor_real' : 'ground';
+
+const groundVisual = this.add.tileSprite(
+  this.levelWidth / 2,
+  H - 42,
+  this.levelWidth,
+  140,
+  gTex
+);
+
+groundVisual.setDepth(8);
+
+// Make texture chunks much larger
+groundVisual.tileScaleX = 0.32;
+groundVisual.tileScaleY = 0.32;
 
     // Elevated platforms using real texture
     if(platforms) {
