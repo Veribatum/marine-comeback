@@ -259,18 +259,26 @@ class BaseLevelScene extends Phaser.Scene {
     this.platforms.add(groundBody);
 
     // Visual ground strip
-const gTex = this.textures.exists('floor_real') ? 'floor_real' : 'ground';
+const gTex = this.textures.exists('floor_real') ? 'floor_real' : 'ground_plain';
 
-// Use one stretched image instead of tileSprite.
-// This prevents the texture from disappearing or repeating into tiny rows.
-const groundVisual = this.add.image(
-  this.levelWidth / 2,
-  H - 92,
-  gTex
-);
+// Build the floor from repeated, cropped ground segments.
+// floor_real has transparent padding, so crop to the actual stone platform art.
+const groundFrame = this.textures.get(gTex).getSourceImage();
+const cropX = 0;
+const cropY = gTex === 'floor_real' ? 39 : 13;
+const cropW = groundFrame.width;
+const cropH = gTex === 'floor_real' ? 27 : 14;
 
-groundVisual.setDepth(8);
-groundVisual.setDisplaySize(this.levelWidth, 64);
+const visualTileW = 260;
+const visualTileH = 90;
+const groundY = H - 67; // puts the top of the visible platform near the player's feet
+
+for (let x = visualTileW / 2 - 20; x < this.levelWidth + visualTileW; x += visualTileW - 4) {
+  const groundTile = this.add.image(x, groundY, gTex);
+  groundTile.setCrop(cropX, cropY, cropW, cropH);
+  groundTile.setDisplaySize(visualTileW, visualTileH);
+  groundTile.setDepth(8);
+}
 
 // Elevated platforms using real texture
     if(platforms) {
@@ -551,8 +559,18 @@ groundVisual.setDisplaySize(this.levelWidth, 64);
   }
 
   checkEnemyPlayerCollision() {
-    if(!this.enemies||this.invincible) return;
-    this.enemies.getChildren().forEach(e=>{ if(!e.active) return; if(Phaser.Math.Distance.Between(e.x,e.y,this.player.x,this.player.y)<24) this.takeDamage(); });
+    if(!this.enemies || this.invincible || !this.player || !this.player.active) return;
+
+    const playerBounds = this.player.getBounds();
+
+    this.enemies.getChildren().forEach(e => {
+      if(!e.active) return;
+
+      // Bounds collision is more reliable than center-distance for squat enemies like slimes.
+      if(Phaser.Geom.Intersects.RectangleToRectangle(playerBounds, e.getBounds())) {
+        this.takeDamage();
+      }
+    });
   }
 
   checkEnemyBulletPlayerCollision() {
