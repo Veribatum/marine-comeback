@@ -258,30 +258,24 @@ class BaseLevelScene extends Phaser.Scene {
     this.physics.add.existing(groundBody, true); // true = static
     this.platforms.add(groundBody);
 
-    // Visual ground — one tall strip using floor_real texture
-    // Use a single tileSprite with the tile sized to fill naturally
-    if(this.textures.exists('floor_real')) {
-      this.add.tileSprite(this.levelWidth/2, H-72, this.levelWidth, 80, 'floor_real').setDepth(8);
-    } else {
-      const g = this.add.graphics().setDepth(8);
-      g.fillStyle(0x3d2e1a); g.fillRect(0, H-112, this.levelWidth, 80);
-      g.fillStyle(0x2a1f0e); g.fillRect(0, H-112, this.levelWidth, 8);
-    }
+    // Visual ground strip — keep it visible and stable on mobile WebGL
+    // Do NOT use setTileScale here; the real floor asset is already large.
+    const gTex = this.textures.exists('floor_real') ? 'floor_real' : 'ground';
+    const groundVisual = this.add.tileSprite(this.levelWidth/2, H-72, this.levelWidth, 96, gTex);
+    groundVisual.setDepth(8);
+    groundVisual.tileScaleX = 1;
+    groundVisual.tileScaleY = 1;
+    groundVisual.setDisplaySize(this.levelWidth, 96);
 
-    // Elevated platforms
+    // Elevated platforms using real texture
     if(platforms) {
       platforms.forEach(p=>{
         for(let i=0;i<p.tiles;i++) {
-          const tile = this.add.rectangle(p.x+i*32+16, p.y, 32, 16, 0x5a4428);
-          tile.setDepth(9);
-          this.physics.add.existing(tile, true);
+          const key = this.textures.exists('platform_block') ? 'platform_block' : 'ground';
+          const tile = this.physics.add.staticImage(p.x+i*32+16, p.y, key);
+          tile.setDepth(9).refreshBody();
           this.platforms.add(tile);
         }
-        // Visual platform strip
-        const pw = p.tiles*32;
-        const pg = this.add.graphics().setDepth(9);
-        pg.fillStyle(0x5a4428); pg.fillRect(p.x, p.y-8, pw, 16);
-        pg.fillStyle(0x3d2e1a); pg.fillRect(p.x, p.y-8, pw, 4);
       });
     }
   }
@@ -619,51 +613,59 @@ class Level0Scene extends BaseLevelScene {
     this.initLevel({title:'THE APARTMENT',flavor:'"Time to get moving."',width:W*1.5});
     GameState.currentLevel=0;
 
-    // Background - apartment wall, full level width, scrolls with camera
+    // Background - apartment wall drawn across full level
     const bg=this.add.graphics().setDepth(0).setScrollFactor(1);
-    // Floor
     bg.fillStyle(0x0d0804); bg.fillRect(0,0,this.levelWidth,H);
-    // Upper wall color
-    bg.fillStyle(0x2a1a0a); bg.fillRect(0,0,this.levelWidth,H*0.7);
-    // Baseboard
-    bg.fillStyle(0x1a0e06); bg.fillRect(0,H*0.68,this.levelWidth,8);
-    // Windows - glowing faintly
-    for(let i=0;i<8;i++) {
-      bg.fillStyle(0x223355); bg.fillRect(i*180+40,40,110,70);
-      bg.fillStyle(0xffdd88,0.08); bg.fillRect(i*180+40,40,110,70);
-      bg.fillStyle(0x000000,0.4); bg.fillRect(i*180+44,44,102,62);
-      // Window frame lines
-      bg.fillStyle(0x334466,0.5);
-      bg.fillRect(i*180+40+55,44,2,62); // vertical divider
-      bg.fillRect(i*180+44,44+31,102,2); // horizontal divider
+    bg.fillStyle(0x221508); bg.fillRect(0,0,this.levelWidth,H*0.75);
+    // Baseboard trim
+    bg.fillStyle(0x110a04); bg.fillRect(0,H*0.72,this.levelWidth,10);
+    // Large windows - 160x110px each, spaced every 220px
+    const numWin = Math.ceil(this.levelWidth/220)+1;
+    for(let i=0;i<numWin;i++) {
+      const wx=i*220+30, wy=30, ww=160, wh=110;
+      // Window outer frame
+      bg.fillStyle(0x1a1a2a); bg.fillRect(wx,wy,ww,wh);
+      // Window glow (dim light outside)
+      bg.fillStyle(0x223350); bg.fillRect(wx+4,wy+4,ww-8,wh-8);
+      bg.fillStyle(0xffdd88,0.06); bg.fillRect(wx+4,wy+4,ww-8,wh-8);
+      // Window panes (4 panes)
+      bg.fillStyle(0x0a0a14,0.7);
+      bg.fillRect(wx+4,wy+4,(ww-10)/2,(wh-10)/2);
+      bg.fillRect(wx+4+ww/2,wy+4,(ww-10)/2,(wh-10)/2);
+      bg.fillRect(wx+4,wy+4+wh/2,(ww-10)/2,(wh-10)/2);
+      bg.fillRect(wx+4+ww/2,wy+4+wh/2,(ww-10)/2,(wh-10)/2);
+      // Frame dividers
+      bg.fillStyle(0x2a1a08);
+      bg.fillRect(wx+ww/2-1,wy,2,wh); // vertical
+      bg.fillRect(wx,wy+wh/2-1,ww,2); // horizontal
     }
 
     this.createGround(null);
 
     // Ground Y for props sitting on floor
-    const GY = H-112; // top surface of ground (physics ground at H-72, tile 80px tall)
+    const GY = H-90;  // physics ground Y — props/enemies sit at this Y
 
     // Apartment props - large, sitting right on ground
-    this.add.image(260, GY-42,'prop_couch').setDepth(8).setScale(1.1);
-    this.add.image(510, GY-46,'prop_tv').setDepth(8).setScale(1.1);
-    this.add.image(780, GY-42,'prop_couch').setDepth(8).setScale(1.1).setFlipX(true);
-    this.add.image(1000, GY-46,'prop_tv').setDepth(8).setScale(1.1);
+    this.add.image(260, H-136,'prop_couch').setDepth(8).setScale(1.3);
+    this.add.image(510, H-140,'prop_tv').setDepth(8).setScale(1.3);
+    this.add.image(780, H-136,'prop_couch').setDepth(8).setScale(1.3).setFlipX(true);
+    this.add.image(1000, H-140,'prop_tv').setDepth(8).setScale(1.3);
 
-    // Floor junk scattered between furniture
-    this.add.image(130, GY-14,'soda_can').setDepth(9).setScale(1.3);
-    this.add.image(170, GY-12,'soda_can').setDepth(9).setScale(1.0).setAngle(35);
-    this.add.image(380, GY-12,'pizza_box').setDepth(9).setScale(1.5);
-    this.add.image(620, GY-12,'pizza_box').setDepth(9).setScale(1.3).setAngle(-5);
-    this.add.image(870, GY-14,'soda_can').setDepth(9).setScale(1.1).setAngle(-20);
+    // Floor junk
+    this.add.image(130, H-100,'soda_can').setDepth(9).setScale(1.3);
+    this.add.image(170, H-98,'soda_can').setDepth(9).setScale(1.0).setAngle(35);
+    this.add.image(380, H-100,'pizza_box').setDepth(9).setScale(1.5);
+    this.add.image(620, H-100,'pizza_box').setDepth(9).setScale(1.3).setAngle(-5);
+    this.add.image(870, H-100,'soda_can').setDepth(9).setScale(1.1).setAngle(-20);
 
     // Doors
-    this.add.image(35, GY-55,'apt_door').setDepth(4).setScale(0.52);
-    this.add.image(this.levelWidth-40, GY-55,'apt_door').setDepth(9).setScale(0.52).setFlipX(true);
-    this.add.text(this.levelWidth-40, GY-130,'EXIT ->',{fontSize:'11px',fontFamily:'Impact, Arial Black',color:'#ffaa00',stroke:'#000',strokeThickness:2}).setDepth(10).setOrigin(0.5);
+    this.add.image(35, H-148,'apt_door').setDepth(4).setScale(0.55);
+    this.add.image(this.levelWidth-40, H-148,'apt_door').setDepth(9).setScale(0.55).setFlipX(true);
+    this.add.text(this.levelWidth-40, H-220,'EXIT ->',{fontSize:'11px',fontFamily:'Impact, Arial Black',color:'#ffaa00',stroke:'#000',strokeThickness:2}).setDepth(10).setOrigin(0.5);
 
     this.exitX = this.levelWidth - 70;
 
-    this.createPlayer(80, GY-72);
+    this.createPlayer(80, 309);
     this.player.setDepth(10);
     this.createBullets();
     this.createHUD();
@@ -673,7 +675,7 @@ class Level0Scene extends BaseLevelScene {
     // Tutorial slimes - fewer, more spread out
     this.enemies=this.physics.add.group();
     [320, 560, 800].forEach(x=>{
-      const s=this.enemies.create(x, GY-20,'slime_a');
+      const s=this.enemies.create(x, 330,'slime_a');
       s.hp=2; s.points=50; s.hitRadius=22; s.type='slime';
       s.idleTimer=0; s.idleFrame=0;
       s.setDisplaySize(44,30);
@@ -719,18 +721,21 @@ class Level1Scene extends BaseLevelScene {
     this.initLevel({title:'DAD BOD DISTRICT',flavor:'"Get moving."',width:W*5});
     GameState.currentLevel=1;
 
-    const GY = H-112; // top surface of ground
+    const GY = H-90;  // physics ground Y
+
+    // Solid black base - covers any bleed from other scenes
+    this.add.rectangle(this.levelWidth/2, H/2, this.levelWidth, H, 0x000000).setDepth(0).setScrollFactor(1);
 
     // Far background sky - fill full height so no bottom edge shows
-    this.add.tileSprite(W/2, H/2, W, H, 'bg_level1_far').setScrollFactor(0).setDepth(0);
+    this.add.tileSprite(W/2, H/2, W, H, 'bg_level1_far').setScrollFactor(0).setDepth(1);
 
     // Gradient fade at bottom to hide sky/ground seam
-    const ov=this.add.graphics().setScrollFactor(0).setDepth(1);
+    const ov=this.add.graphics().setScrollFactor(0).setDepth(2);
     ov.fillGradientStyle(0x000000,0x000000,0x000000,0x000000,0,0,0.85,0.85);
     ov.fillRect(0,H*0.45,W,H*0.55);
 
     // City skyline - sits just above ground, parallax slow
-    this.add.tileSprite(W/2, GY-60, W, 160, 'bg_level1_skyline').setScrollFactor(0.2).setDepth(2);
+    this.add.tileSprite(W/2, GY-60, W, 160, 'bg_level1_skyline').setScrollFactor(0.2).setDepth(3);
 
     // Ground
     this.createGround([
@@ -745,24 +750,24 @@ class Level1Scene extends BaseLevelScene {
     });
 
     // Ground-level props - sit ON the walkway (depth 9, same as player layer)
-    this.add.image(2000, GY-38,'prop_treadmill').setDepth(9).setScale(0.55);
-    this.add.image(3700, GY-50,'prop_fence_gate').setDepth(9).setScale(0.6);
+    this.add.image(2000, H-130,'prop_treadmill').setDepth(9).setScale(0.55);
+    this.add.image(3700, H-140,'prop_fence_gate').setDepth(9).setScale(0.6);
 
     // Vending machines ON the ground
-    [[500,GY-38],[1300,GY-40],[2100,GY-38],[3200,GY-38]].forEach(([x,y])=>{
+    [[500,H-125],[1300,H-128],[2100,H-125],[3200,H-125]].forEach(([x,y])=>{
       this.add.image(x,y,'prop_vending_chips').setDepth(9).setScale(0.55);
     });
 
     // Exit gate
     this.exitX = this.levelWidth - 160;
-    this.add.image(this.exitX+80, GY-60,'exit_gate').setDepth(9).setScale(0.85);
+    this.add.image(this.exitX+80, H-150,'exit_gate').setDepth(9).setScale(0.85);
     const gp=this.add.graphics().setDepth(10);
-    gp.fillStyle(0xff8800,0.15); gp.fillRect(this.exitX,GY-160,160,160);
+    gp.fillStyle(0xff8800,0.15); gp.fillRect(this.exitX,H-240,160,150);
     this.tweens.add({targets:gp,alpha:0.3,duration:600,yoyo:true,repeat:-1});
 
     // Foreground barricades depth 8 - BEHIND player so player runs past them
-    [400,900,1500,2200,2800,3400].forEach(x=>this.add.image(x,GY-26,'prop_barricade').setDepth(8).setScale(0.8));
-    [250,650,1100,1700,2400,3000,3600].forEach(x=>this.add.image(x,GY-14,'prop_cone').setDepth(8).setScale(0.7));
+    [400,900,1500,2200,2800,3400].forEach(x=>this.add.image(x,H-118,'prop_barricade').setDepth(8).setScale(0.8));
+    [250,650,1100,1700,2400,3000,3600].forEach(x=>this.add.image(x,H-106,'prop_cone').setDepth(8).setScale(0.7));
 
     // Steam vents
     [800,1600,2400,3200].forEach(x=>{
@@ -776,7 +781,7 @@ class Level1Scene extends BaseLevelScene {
       }});
     });
 
-    this.createPlayer(60,H-148);
+    this.createPlayer(60, 309);
     this.player.setDepth(10);
     this.createBullets();
 
@@ -784,7 +789,7 @@ class Level1Scene extends BaseLevelScene {
     this.enemies=this.physics.add.group();
     // Slimes
     [200,500,800,1100,1400,1700,2000,2300,2600,2900,3200,3500].forEach(x=>{
-      const s=this.enemies.create(x,H-110,'slime_a');
+      const s=this.enemies.create(x, 330,'slime_a');
       s.hp=2; s.points=100; s.hitRadius=22; s.type='slime';
       s.idleTimer=0; s.idleFrame=0;
       s.setDisplaySize(44,30); s.setDepth(9);
@@ -793,9 +798,9 @@ class Level1Scene extends BaseLevelScene {
     });
     // Bats
     [400,700,1000,1400,1800,2200,2600,3000,3400].forEach(x=>{
-      const b=this.enemies.create(x,H-200,'bat_a');
+      const b=this.enemies.create(x,H-220,'bat_a');
       b.hp=1; b.points=150; b.hitRadius=16; b.type='bat';
-      b.startY=H-200+Phaser.Math.Between(-30,30); b.swoopTimer=Phaser.Math.Between(1000,3000); b.swooping=false;
+      b.startY=H-220+Phaser.Math.Between(-20,20); b.swoopTimer=Phaser.Math.Between(1000,3000); b.swooping=false;
       b.setDepth(9);
     });
     // Drones
@@ -823,8 +828,9 @@ class Level1Scene extends BaseLevelScene {
       const pk=this.pickups.create(x,y,t); pk.pickupType=t; pk.body.setGravityY(200);
     });
 
-    // Colliders
-    this.physics.add.collider(this.enemies,this.platforms);
+    // Colliders — enemies land on ground
+    this.physics.add.collider(this.enemies, this.platforms);
+    this.physics.add.collider(this.barrels, this.platforms);
     this.physics.add.collider(this.pickups,this.platforms);
     this.physics.add.overlap(this.bullets,this.barrels,(b,barrel)=>{ b.destroy(); this.explodeBarrel(barrel); });
     this.physics.add.overlap(this.player,this.pickups,this.collectPickup,null,this);
