@@ -425,7 +425,10 @@ for (let x = visualTileW / 2 - 30; x < this.levelWidth + visualTileW; x += visua
     if(wantCrouch&&!this.isCrouching){ this.isCrouching=true; p.body.setSize(20,22,true); }
     else if(!wantCrouch&&this.isCrouching){ this.isCrouching=false; p.body.setSize(48,82,true); p.body.setOffset(9,8); }
 
-    const PLAYER_W=76, PLAYER_H=114, CROUCH_W=84, CROUCH_H=80;
+    const PLAYER_IDLE_W=76, PLAYER_IDLE_H=114;
+    const PLAYER_RUN_W=86, PLAYER_RUN_H=114;
+    const PLAYER_JUMP_W=78, PLAYER_JUMP_H=114;
+    const CROUCH_W=84, CROUCH_H=80;
     if(this.isCrouching) {
       p.setVelocityX(0);
       if(left) this.playerFacing=-1;
@@ -441,17 +444,17 @@ for (let x = visualTileW / 2 - 30; x < this.levelWidth + visualTileW; x += visua
       else p.setVelocityX(0);
       if(!this.onGround){
         p.setTexture('player_jump');
-        p.setDisplaySize(PLAYER_W, PLAYER_H);
+        p.setDisplaySize(PLAYER_JUMP_W, PLAYER_JUMP_H);
       } else if(left||right){
         this._runTimer+=delta;
         if(this._runTimer>150){ this._runFrame=this._runFrame===0?1:0; this._runTimer=0; }
         p.setTexture(this._runFrame===0?'player_run_a':'player_run_b');
-        p.setDisplaySize(PLAYER_W, PLAYER_H);
+        p.setDisplaySize(PLAYER_RUN_W, PLAYER_RUN_H);
       } else {
         this._idleTimer+=delta;
         if(this._idleTimer>400){ this._idleFrame=this._idleFrame===0?1:0; this._idleTimer=0; }
         p.setTexture(this._idleFrame===0?'player':'player_idle_b');
-        p.setDisplaySize(PLAYER_W, PLAYER_H);
+        p.setDisplaySize(PLAYER_IDLE_W, PLAYER_IDLE_H);
       }
       if(jump&&this.onGround) p.setVelocityY(-400);
     }
@@ -700,12 +703,12 @@ class Level0Scene extends BaseLevelScene {
     // Tutorial slimes - fewer, more spread out
     this.enemies=this.physics.add.group();
     [320, 560, 800].forEach(x=>{
-      const s=this.enemies.create(x, 330,'slime_a');
-      s.hp=2; s.points=50; s.hitRadius=22; s.type='slime';
+      const s=this.enemies.create(x, 305,'slime_a');
+      s.hp=2; s.points=50; s.hitRadius=34; s.type='slime';
       s.idleTimer=0; s.idleFrame=0;
-      s.setDisplaySize(44,30);
+      s.setDisplaySize(66,45);
       s.setDepth(12); // in front of ground props (8) and player (10)... wait, behind player
-      s.setVelocityX(-40); s.body.setGravityY(400); s.body.setSize(20,16);
+      s.setVelocityX(-40); s.body.setGravityY(400); s.body.setSize(34,22);
       this.physics.add.collider(s,this.platforms);
     });
 
@@ -727,7 +730,7 @@ class Level0Scene extends BaseLevelScene {
         if(!e.idleTimer) e.idleTimer=0;
         e.idleTimer+=delta;
         if(e.idleTimer>600){ e.idleFrame=(e.idleFrame||0)===0?1:0; e.idleTimer=0; }
-        e.setTexture(e.idleFrame===0?'slime_a':'slime_b');
+        e.setTexture(e.idleFrame===0?'slime_a':'slime_b'); e.setDisplaySize(66,45);
       });
     }
     this.checkBulletEnemyCollision();
