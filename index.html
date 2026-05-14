@@ -261,22 +261,28 @@ class BaseLevelScene extends Phaser.Scene {
     // Visual ground strip
 const gTex = this.textures.exists('floor_real') ? 'floor_real' : 'ground_plain';
 
-// Build the floor from repeated, cropped ground segments.
-// floor_real has transparent padding, so crop to the actual stone platform art.
+// Large chunky platform tiles that sit directly under the player's feet.
 const groundFrame = this.textures.get(gTex).getSourceImage();
+
 const cropX = 0;
 const cropY = gTex === 'floor_real' ? 39 : 13;
 const cropW = groundFrame.width;
 const cropH = gTex === 'floor_real' ? 27 : 14;
 
-const visualTileW = 260;
-const visualTileH = 90;
-const groundY = H - 67; // puts the top of the visible platform near the player's feet
+// MUCH larger tiles
+const visualTileW = 520;
+const visualTileH = 170;
 
-for (let x = visualTileW / 2 - 20; x < this.levelWidth + visualTileW; x += visualTileW - 4) {
+// Raise floor upward so player visually stands on it
+const groundY = H - 18;
+
+for (let x = visualTileW / 2 - 40; x < this.levelWidth + visualTileW; x += visualTileW - 18) {
   const groundTile = this.add.image(x, groundY, gTex);
+
   groundTile.setCrop(cropX, cropY, cropW, cropH);
+
   groundTile.setDisplaySize(visualTileW, visualTileH);
+
   groundTile.setDepth(8);
 }
 
