@@ -306,8 +306,8 @@ for (let x = visualTileW / 2 - 30; x < this.levelWidth + visualTileW; x += visua
     this.player.setCollideWorldBounds(false);
     this.player.setBounce(0);
     this.player.body.setGravityY(500);
-    this.player.body.setSize(48,92);
-    this.player.body.setOffset(10,4);
+    this.player.body.setSize(38,78);
+    this.player.body.setOffset(13,10);
     this.player.body.setMaxVelocityY(600);
     this.physics.add.collider(this.player,this.platforms);
     this.cameras.main.setBounds(0,0,this.levelWidth,H);
@@ -429,9 +429,9 @@ for (let x = visualTileW / 2 - 30; x < this.levelWidth + visualTileW; x += visua
     // Crouch
     const wantCrouch=crouch&&this.onGround;
     if(wantCrouch&&!this.isCrouching){ this.isCrouching=true; p.body.setSize(20,22,true); }
-    else if(!wantCrouch&&this.isCrouching){ this.isCrouching=false; p.body.setSize(48,92,true); p.body.setOffset(10,4); }
+    else if(!wantCrouch&&this.isCrouching){ this.isCrouching=false; p.body.setSize(38,78,true); p.body.setOffset(13,10); }
 
-    const PLAYER_W=68, PLAYER_H=102, CROUCH_W=76, CROUCH_H=72;
+    const PLAYER_W=76, PLAYER_H=114, CROUCH_W=84, CROUCH_H=80;
     if(this.isCrouching) {
       p.setVelocityX(0);
       if(left) this.playerFacing=-1;
