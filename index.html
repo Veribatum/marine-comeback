@@ -425,9 +425,9 @@ for (let x = visualTileW / 2 - 30; x < this.levelWidth + visualTileW; x += visua
     if(wantCrouch&&!this.isCrouching){ this.isCrouching=true; p.body.setSize(20,22,true); }
     else if(!wantCrouch&&this.isCrouching){ this.isCrouching=false; p.body.setSize(48,82,true); p.body.setOffset(9,8); }
 
-    const PLAYER_IDLE_W=104, PLAYER_IDLE_H=138;
-    const PLAYER_RUN_W=88, PLAYER_RUN_H=118;
-    const PLAYER_JUMP_W=88, PLAYER_JUMP_H=118;
+    const PLAYER_IDLE_W=92, PLAYER_IDLE_H=126;
+    const PLAYER_RUN_W=92, PLAYER_RUN_H=126;
+    const PLAYER_JUMP_W=92, PLAYER_JUMP_H=126;
     const CROUCH_W=90, CROUCH_H=84;
     if(this.isCrouching) {
       p.setVelocityX(0);
@@ -467,7 +467,7 @@ for (let x = visualTileW / 2 - 30; x < this.levelWidth + visualTileW; x += visua
     // Invincibility flash
     if(this.invincible){
       this.invincibleTimer-=delta;
-      p.setAlpha(Math.sin(this.invincibleTimer*0.03)>0?1:0.3);
+      p.setAlpha(1);
       if(this.invincibleTimer<=0){ this.invincible=false; p.setAlpha(1); }
     }
     if(p.y>H+80) this.playerDied();
@@ -703,12 +703,12 @@ class Level0Scene extends BaseLevelScene {
     // Tutorial slimes - fewer, more spread out
     this.enemies=this.physics.add.group();
     [320, 560, 800].forEach(x=>{
-      const s=this.enemies.create(x, 265,'slime_a');
-      s.hp=2; s.points=50; s.hitRadius=68; s.type='slime';
+      const s=this.enemies.create(x, 305,'slime_a');
+      s.hp=2; s.points=50; s.hitRadius=34; s.type='slime';
       s.idleTimer=0; s.idleFrame=0;
-      s.setDisplaySize(150,102);
+      s.setDisplaySize(66,45);
       s.setDepth(12); // in front of ground props (8) and player (10)... wait, behind player
-      s.setVelocityX(-40); s.body.setGravityY(400); s.body.setSize(74,42);
+      s.setVelocityX(-40); s.body.setGravityY(400); s.body.setSize(34,22);
       this.physics.add.collider(s,this.platforms);
     });
 
@@ -730,7 +730,7 @@ class Level0Scene extends BaseLevelScene {
         if(!e.idleTimer) e.idleTimer=0;
         e.idleTimer+=delta;
         if(e.idleTimer>600){ e.idleFrame=(e.idleFrame||0)===0?1:0; e.idleTimer=0; }
-        e.setTexture(e.idleFrame===0?'slime_a':'slime_b'); e.setDisplaySize(150,102);
+        e.setTexture(e.idleFrame===0?'slime_a':'slime_b'); e.setDisplaySize(66,45);
       });
     }
     this.checkBulletEnemyCollision();
@@ -817,12 +817,12 @@ class Level1Scene extends BaseLevelScene {
     this.enemies=this.physics.add.group();
     // Slimes
     [200,500,800,1100,1400,1700,2000,2300,2600,2900,3200,3500].forEach(x=>{
-      const s=this.enemies.create(x, 272,'slime_a');
-      s.hp=2; s.points=100; s.hitRadius=68; s.type='slime';
+      const s=this.enemies.create(x, 330,'slime_a');
+      s.hp=2; s.points=100; s.hitRadius=22; s.type='slime';
       s.idleTimer=0; s.idleFrame=0;
-      s.setDisplaySize(150,102); s.setDepth(9);
+      s.setDisplaySize(44,30); s.setDepth(9);
       s.setVelocityX(Phaser.Math.Between(30,60)*(Math.random()>0.5?1:-1));
-      s.body.setGravityY(400); s.body.setSize(74,42);
+      s.body.setGravityY(400); s.body.setSize(20,16);
     });
     // Bats
     [400,700,1000,1400,1800,2200,2600,3000,3400].forEach(x=>{
@@ -882,7 +882,7 @@ class Level1Scene extends BaseLevelScene {
           e.idleTimer+=delta;
           if(e.idleTimer>600){ e.idleFrame=(e.idleFrame||0)===0?1:0; e.idleTimer=0; }
           e.setTexture(e.idleFrame===0?'slime_a':'slime_b');
-          e.setDisplaySize(150,102).setDepth(9);
+          e.setDisplaySize(44,30).setDepth(9);
         }
         if(e.type==='bat'){
           if(!e.wingTimer) e.wingTimer=0;
