@@ -425,9 +425,9 @@ for (let x = visualTileW / 2 - 30; x < this.levelWidth + visualTileW; x += visua
     if(wantCrouch&&!this.isCrouching){ this.isCrouching=true; p.body.setSize(20,22,true); }
     else if(!wantCrouch&&this.isCrouching){ this.isCrouching=false; p.body.setSize(48,82,true); p.body.setOffset(9,8); }
 
-    const PLAYER_IDLE_W=92, PLAYER_IDLE_H=126;
-    const PLAYER_RUN_W=92, PLAYER_RUN_H=126;
-    const PLAYER_JUMP_W=92, PLAYER_JUMP_H=126;
+    const PLAYER_IDLE_W=104, PLAYER_IDLE_H=138;
+    const PLAYER_RUN_W=104, PLAYER_RUN_H=138;
+    const PLAYER_JUMP_W=104, PLAYER_JUMP_H=138;
     const CROUCH_W=90, CROUCH_H=84;
     if(this.isCrouching) {
       p.setVelocityX(0);
