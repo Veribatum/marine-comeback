@@ -206,12 +206,6 @@ class IntroScene extends Phaser.Scene {
   constructor() { super('Intro'); }
   create() {
     this.add.rectangle(W/2,H/2,W,H,0x1a1008);
-    // Apartment props
-    this.add.image(280,H-108,'prop_couch').setScale(0.5).setDepth(4);
-    this.add.image(500,H-118,'prop_tv').setScale(0.55).setDepth(4);
-    this.add.image(120,H-114,'soda_can').setScale(1.2).setDepth(5);
-    this.add.image(160,H-112,'soda_can').setScale(0.9).setAngle(25).setDepth(5);
-    this.add.image(400,H-112,'pizza_box').setScale(1.4).setDepth(5);
 
     const box = this.add.graphics();
     box.fillStyle(0x000000,0.85); box.fillRect(W/2-200,H/2-60,400,120);
@@ -306,8 +300,8 @@ for (let x = visualTileW / 2 - 30; x < this.levelWidth + visualTileW; x += visua
     this.player.setCollideWorldBounds(false);
     this.player.setBounce(0);
     this.player.body.setGravityY(500);
-    this.player.body.setSize(38,78);
-    this.player.body.setOffset(13,10);
+    this.player.body.setSize(48,82);
+    this.player.body.setOffset(9,8);
     this.player.body.setMaxVelocityY(600);
     this.physics.add.collider(this.player,this.platforms);
     this.cameras.main.setBounds(0,0,this.levelWidth,H);
@@ -429,7 +423,7 @@ for (let x = visualTileW / 2 - 30; x < this.levelWidth + visualTileW; x += visua
     // Crouch
     const wantCrouch=crouch&&this.onGround;
     if(wantCrouch&&!this.isCrouching){ this.isCrouching=true; p.body.setSize(20,22,true); }
-    else if(!wantCrouch&&this.isCrouching){ this.isCrouching=false; p.body.setSize(38,78,true); p.body.setOffset(13,10); }
+    else if(!wantCrouch&&this.isCrouching){ this.isCrouching=false; p.body.setSize(48,82,true); p.body.setOffset(9,8); }
 
     const PLAYER_W=76, PLAYER_H=114, CROUCH_W=84, CROUCH_H=80;
     if(this.isCrouching) {
@@ -696,7 +690,7 @@ class Level0Scene extends BaseLevelScene {
 
     this.exitX = this.levelWidth - 70;
 
-    this.createPlayer(80, 309);
+    this.createPlayer(80, 270);
     this.player.setDepth(10);
     this.createBullets();
     this.createHUD();
