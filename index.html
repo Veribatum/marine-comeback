@@ -143,7 +143,7 @@ class BootScene extends Phaser.Scene {
 
     g.destroy();
   }
-  create() { this.scene.start('IntroVideo'); }
+  create() { this.scene.start('StartScreen'); }
 }
 
 // ============================================================
@@ -311,9 +311,9 @@ class BaseLevelScene extends Phaser.Scene {
       shoot: {x:W-148,y:H-85,w:65,h:85},
     };
     this.drawTouchButtons();
-    this.add.text(35, H-72,'◀',{fontSize:'22px',fontFamily:'Arial Black',color:'#ffffff',stroke:'#000',strokeThickness:2}).setScrollFactor(0).setDepth(102);
-    this.add.text(95, H-72,'▶',{fontSize:'22px',fontFamily:'Arial Black',color:'#ffffff',stroke:'#000',strokeThickness:2}).setScrollFactor(0).setDepth(102);
-    this.add.text(61, H-28,'▼',{fontSize:'18px',fontFamily:'Arial Black',color:'#ffdd44',stroke:'#000',strokeThickness:2}).setScrollFactor(0).setDepth(102).setOrigin(0.5);
+    this.add.text(35, H-72,'<',{fontSize:'22px',fontFamily:'Arial Black',color:'#ffffff',stroke:'#000',strokeThickness:2}).setScrollFactor(0).setDepth(102);
+    this.add.text(95, H-72,'>',{fontSize:'22px',fontFamily:'Arial Black',color:'#ffffff',stroke:'#000',strokeThickness:2}).setScrollFactor(0).setDepth(102);
+    this.add.text(61, H-28,'v',{fontSize:'18px',fontFamily:'Arial Black',color:'#ffdd44',stroke:'#000',strokeThickness:2}).setScrollFactor(0).setDepth(102).setOrigin(0.5);
     this.add.text(61, H-12,'DUCK',{fontSize:'9px',fontFamily:'Courier New',color:'#aaffaa',stroke:'#000',strokeThickness:1}).setScrollFactor(0).setDepth(102).setOrigin(0.5);
     this.add.text(W-41,H-58,'A',{fontSize:'26px',fontFamily:'Arial Black',color:'#44ff44',stroke:'#000',strokeThickness:3}).setScrollFactor(0).setDepth(102).setOrigin(0.5);
     this.add.text(W-41,H-30,'JUMP',{fontSize:'9px',fontFamily:'Courier New',color:'#aaffaa'}).setScrollFactor(0).setDepth(102).setOrigin(0.5);
@@ -614,7 +614,7 @@ class Level0Scene extends BaseLevelScene {
     // Doors - start (came from) and end (exit)
     this.add.image(40,H-118,'apt_door').setDepth(4).setScale(0.55);
     this.add.image(this.levelWidth-50,H-118,'apt_door').setDepth(9).setScale(0.55).setFlipX(true);
-    this.add.text(this.levelWidth-50,H-185,'EXIT →',{fontSize:'11px',fontFamily:'Impact, Arial Black',color:'#ffaa00',stroke:'#000',strokeThickness:2}).setDepth(10).setOrigin(0.5);
+    this.add.text(this.levelWidth-50,H-185,'EXIT ->',{fontSize:'11px',fontFamily:'Impact, Arial Black',color:'#ffaa00',stroke:'#000',strokeThickness:2}).setDepth(10).setOrigin(0.5);
 
     this.exitX = this.levelWidth - 80;
 
@@ -846,7 +846,7 @@ class Level1Scene extends BaseLevelScene {
 
 
 // ============================================================
-// RECLINER CHARGER HELPER — shared logic for Level 2+
+// RECLINER CHARGER HELPER ? shared logic for Level 2+
 // ============================================================
 // Usage: this.spawnRecliner(x, y)
 // Call updateRecliners(time, delta) in scene update
