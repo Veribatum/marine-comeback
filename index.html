@@ -547,15 +547,18 @@ class BaseLevelScene extends Phaser.Scene {
     if(this.gameOver) return;
     GameState.lives--;
     this.gameOver=true;
-    // Stop physics immediately so enemies stop moving
-    this.physics.pause();
     this.player.setTexture('player_dead');
     this.player.setVelocity(0,0);
-    this.time.delayedCall(1500,()=>{
-      this.physics.resume();
-      if(GameState.lives<=0){ GameState.reset(); this.scene.start('StartScreen'); }
-      else { GameState.hp=3; this.scene.start(this.scene.key); }
-    });
+    this.player.body.setGravityY(0);
+    // Disable all enemies
+    if(this.enemies) this.enemies.getChildren().forEach(e=>{ if(e.body) e.body.enable=false; });
+    const nextScene = GameState.lives<=0 ? 'StartScreen' : this.scene.key;
+    const doNext = () => {
+      if(GameState.lives<=0) GameState.reset();
+      else GameState.hp=3;
+      this.scene.start(nextScene);
+    };
+    this.time.delayedCall(1600, doNext);
   }
 
   killEnemy(enemy) {
@@ -739,7 +742,7 @@ class Level0Scene extends BaseLevelScene {
 
     this.exitX = this.levelWidth - 70;
 
-    this.createPlayer(80, 305);
+    this.createPlayer(80, 355);
     this.player.setDepth(10);
     this.createBullets();
     this.createHUD();
