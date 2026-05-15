@@ -140,6 +140,8 @@ class BootScene extends Phaser.Scene {
     g.generateTexture('mysterybox',24,24);
     g.clear(); g.fillStyle(0xff6600); g.fillRect(0,1,8,4);
     g.generateTexture('enemybullet',8,6);
+    g.clear(); g.fillStyle(0xffffff); g.fillRect(0,0,1,1);
+    g.generateTexture('pixel',1,1);
     g.destroy();
   }
   create() { this.scene.start('StartScreen'); }
@@ -240,10 +242,10 @@ class BaseLevelScene extends Phaser.Scene {
   createGround(platforms, groundTex) {
     this.platforms = this.physics.add.staticGroup();
 
-    // Physics ground - use MatterJS-safe static body approach
-    const groundBody = this.platforms.create(this.levelWidth/2, H-60, null);
-    groundBody.setVisible(false);
-    groundBody.body.setSize(this.levelWidth+200, 40);
+    // Physics ground body
+    const groundBody = this.platforms.create(this.levelWidth/2, H-60, 'pixel');
+    groundBody.setDisplaySize(this.levelWidth+200, 40);
+    groundBody.setAlpha(0);
     groundBody.refreshBody();
 
     // Visual ground - tileSprite so small tiles repeat crisply
@@ -260,9 +262,9 @@ class BaseLevelScene extends Phaser.Scene {
         const pw = p.tiles * 96;
         const cx = p.x + pw/2;
         // Invisible physics body
-        const body = this.platforms.create(cx, p.y-10, null);
-        body.setVisible(false);
-        body.body.setSize(pw, 20);
+        const body = this.platforms.create(cx, p.y-10, 'pixel');
+        body.setDisplaySize(pw, 20);
+        body.setAlpha(0);
         body.refreshBody();
         // Visual tileSprite
         const platTextures = ['ground_plain','ground_slime','ground_cola','ground_debris'];
