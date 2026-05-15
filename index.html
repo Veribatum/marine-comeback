@@ -276,11 +276,12 @@ class BaseLevelScene extends Phaser.Scene {
 
     createPlayer(x,y) {
     this.player = this.physics.add.sprite(x,y,'player');
+    this.player.setOrigin(0.5, 1.0);
     this.player.setCollideWorldBounds(false);
     this.player.setBounce(0);
     this.player.body.setGravityY(500);
     this.player.body.setSize(48,50);
-    this.player.body.setOffset(9,8);
+    this.player.body.setOffset(28, 0);
     this.player.body.setMaxVelocityY(600);
     this.physics.add.collider(this.player,this.platforms);
     this.cameras.main.setBounds(0,0,this.levelWidth,H);
@@ -751,7 +752,7 @@ class Level0Scene extends BaseLevelScene {
 
     this.exitX = this.levelWidth - 70;
 
-    this.createPlayer(80, 220);
+    this.createPlayer(80, 338);
     this.player.setDepth(10);
     this.createBullets();
     this.createHUD();
@@ -799,19 +800,7 @@ class Level0Scene extends BaseLevelScene {
 
   update(time,delta) {
     if(this.gameOver || this.levelComplete) return;
-    // DEBUG - draw red rect showing physics body, green showing ground
-    if(!this._dbg) this._dbg = this.add.graphics().setDepth(999).setScrollFactor(0);
-    this._dbg.clear();
-    if(this.player && this.player.body) {
-      const cam = this.cameras.main;
-      const bx = this.player.body.x - cam.scrollX;
-      const by = this.player.body.y - cam.scrollY;
-      this._dbg.lineStyle(2, 0xff0000);
-      this._dbg.strokeRect(bx, by, this.player.body.width, this.player.body.height);
-      // Ground line
-      this._dbg.lineStyle(2, 0x00ff00);
-      this._dbg.strokeRect(0, H-72-40, 400, 80);
-    }
+    // debug removed
     this.updatePlayer(delta);
     if(this.enemies) {
       this.enemies.getChildren().forEach(e=>{
