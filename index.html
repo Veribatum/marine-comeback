@@ -240,10 +240,11 @@ class BaseLevelScene extends Phaser.Scene {
   createGround(platforms, groundTex) {
     this.platforms = this.physics.add.staticGroup();
 
-    // Physics ground - invisible, at H-72
-    const groundBody = this.add.rectangle(this.levelWidth/2, H-90, this.levelWidth+200, 60, 0x000000, 0);
-    this.physics.add.existing(groundBody, true);
-    this.platforms.add(groundBody);
+    // Physics ground - use MatterJS-safe static body approach
+    const groundBody = this.platforms.create(this.levelWidth/2, H-60, null);
+    groundBody.setVisible(false);
+    groundBody.body.setSize(this.levelWidth+200, 40);
+    groundBody.refreshBody();
 
     // Visual ground - tileSprite so small tiles repeat crisply
     const gTex = groundTex || 'floor_real';
@@ -259,9 +260,10 @@ class BaseLevelScene extends Phaser.Scene {
         const pw = p.tiles * 96;
         const cx = p.x + pw/2;
         // Invisible physics body
-        const body = this.add.rectangle(cx, p.y, pw, 20, 0x000000, 0);
-        this.physics.add.existing(body, true);
-        this.platforms.add(body);
+        const body = this.platforms.create(cx, p.y-10, null);
+        body.setVisible(false);
+        body.body.setSize(pw, 20);
+        body.refreshBody();
         // Visual tileSprite
         const platTextures = ['ground_plain','ground_slime','ground_cola','ground_debris'];
         const platIdx = Math.floor(cx/800) % platTextures.length;
