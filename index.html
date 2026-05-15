@@ -277,8 +277,8 @@ class BaseLevelScene extends Phaser.Scene {
     this.player.setCollideWorldBounds(false);
     this.player.setBounce(0);
     this.player.body.setGravityY(500);
-    this.player.body.setSize(48,50);
-    this.player.body.setOffset(9,8);
+    this.player.body.setSize(44,60);
+    this.player.body.setOffset(30,82);
     this.player.body.setMaxVelocityY(600);
     this.physics.add.collider(this.player,this.platforms);
     this.cameras.main.setBounds(0,0,this.levelWidth,H);
@@ -547,8 +547,12 @@ class BaseLevelScene extends Phaser.Scene {
     if(this.gameOver) return;
     GameState.lives--;
     this.gameOver=true;
+    // Stop physics immediately so enemies stop moving
+    this.physics.pause();
     this.player.setTexture('player_dead');
+    this.player.setVelocity(0,0);
     this.time.delayedCall(1500,()=>{
+      this.physics.resume();
       if(GameState.lives<=0){ GameState.reset(); this.scene.start('StartScreen'); }
       else { GameState.hp=3; this.scene.start(this.scene.key); }
     });
@@ -722,11 +726,11 @@ class Level0Scene extends BaseLevelScene {
     this.add.image(1000, H-170,'prop_tv').setDisplaySize(140,110).setDepth(8);
 
     // Floor junk
-    this.add.image(130, H-132,'soda_can').setDisplaySize(30,55).setDepth(9);
-    this.add.image(170, H-130,'soda_can').setDisplaySize(30,55).setDepth(9).setAngle(35);
+    this.add.image(130, H-132,'soda_can').setDisplaySize(45,55).setDepth(9);
+    this.add.image(170, H-130,'soda_can').setDisplaySize(45,55).setDepth(9).setAngle(35);
     this.add.image(380, H-132,'pizza_box').setDisplaySize(90,70).setDepth(9);
     this.add.image(620, H-132,'pizza_box').setDisplaySize(90,70).setDepth(9).setAngle(-5);
-    this.add.image(870, H-132,'soda_can').setDisplaySize(30,55).setDepth(9).setAngle(-20);
+    this.add.image(870, H-132,'soda_can').setDisplaySize(45,55).setDepth(9).setAngle(-20);
 
     // Doors
     this.add.image(35, H-148,'apt_door').setDepth(4).setScale(0.55);
