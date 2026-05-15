@@ -18,7 +18,7 @@
 <div id="game-container"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
 <script>
-const ASSETS = {}; // assets loaded via files;
+const ASSETS={};;
 
 const W = 800, H = 450;
 
@@ -37,111 +37,93 @@ const GameState = {
 class BootScene extends Phaser.Scene {
   constructor() { super('Boot'); }
   preload() {
-    this.load.image('player', 'assets/player.png');
-    this.load.image('player_idle_b', 'assets/player_idle_b.png');
-    this.load.image('player_run_a', 'assets/player_run_a.png');
-    this.load.image('player_run_b', 'assets/player_run_b.png');
-    this.load.image('player_jump', 'assets/player_jump.png');
-    this.load.image('player_crouch', 'assets/player_crouch.png');
-    this.load.image('player_crouch_b', 'assets/player_crouch_b.png');
-    this.load.image('player_crouch_wounded', 'assets/player_crouch_wounded.png');
-    this.load.image('player_dead', 'assets/player_dead.png');
-    this.load.image('player_victory', 'assets/player_victory.png');
-    this.load.image('slime_a', 'assets/slime_a.png');
-    this.load.image('slime_b', 'assets/slime_b.png');
-    this.load.image('bat_a', 'assets/bat_a.png');
-    this.load.image('bat_b', 'assets/bat_b.png');
-    this.load.image('drone_a', 'assets/drone_a.png');
-    this.load.image('drone_b', 'assets/drone_b.png');
-    this.load.image('recliner_idle', 'assets/recliner_idle.png');
-    this.load.image('recliner_charge', 'assets/recliner_charge.png');
-    this.load.image('boss_king_a', 'assets/boss_king_a.png');
-    this.load.image('boss_king_b', 'assets/boss_king_b.png');
-    this.load.image('boss_soda_shot', 'assets/boss_soda_shot.png');
-    this.load.image('bullet', 'assets/bullet.png');
-    this.load.image('enemy_bullet', 'assets/enemy_bullet.png');
-    this.load.image('fx_slime_hit', 'assets/fx_slime_hit.png');
-    this.load.image('fx_slime_death', 'assets/fx_slime_death.png');
-    this.load.image('fx_bat_hit', 'assets/fx_bat_hit.png');
-    this.load.image('fx_bat_death', 'assets/fx_bat_death.png');
-    this.load.image('fx_drone_death', 'assets/fx_drone_death.png');
-    this.load.image('fx_explosion', 'assets/fx_explosion.png');
-    this.load.image('fx_barrel_explode', 'assets/fx_barrel_explode.png');
-    this.load.image('fx_barrel_burst', 'assets/fx_barrel_burst.png');
-    this.load.image('pickup_shake', 'assets/pickup_shake.png');
-    this.load.image('pickup_mystery', 'assets/pickup_mystery.png');
-    this.load.image('pickup_coin', 'assets/pickup_coin.png');
-    this.load.image('floor_real', 'assets/floor_real.jpg');
-    this.load.image('ground_plain', 'assets/ground_plain.png');
-    this.load.image('ground_slime', 'assets/ground_slime.png');
-    this.load.image('ground_vent', 'assets/ground_vent.png');
-    this.load.image('ground_debris', 'assets/ground_debris.png');
-    this.load.image('ground_cola', 'assets/ground_cola.png');
-    this.load.image('ground_clean', 'assets/ground_clean.png');
-    this.load.image('platform_block', 'assets/platform_block.png');
-    this.load.image('prop_tv', 'assets/prop_tv.png');
-    this.load.image('prop_couch', 'assets/prop_couch.png');
-    this.load.image('apt_door', 'assets/apt_door.png');
-    this.load.image('barrel', 'assets/barrel.png');
-    this.load.image('prop_barricade', 'assets/prop_barricade.png');
-    this.load.image('prop_cone', 'assets/prop_cone.png');
-    this.load.image('prop_treadmill', 'assets/prop_treadmill.png');
-    this.load.image('prop_vending_chips', 'assets/prop_vending_chips.png');
-    this.load.image('prop_billboard_gym', 'assets/prop_billboard_gym.png');
-    this.load.image('prop_billboard_noex', 'assets/prop_billboard_noex.png');
-    this.load.image('prop_fence_gate', 'assets/prop_fence_gate.png');
-    this.load.image('prop_steam_vent', 'assets/prop_steam_vent.png');
-    this.load.image('steam_off', 'assets/steam_off.png');
-    this.load.image('exit_gate', 'assets/exit_gate.jpg');
-    this.load.image('pizza_box', 'assets/pizza_box.png');
-    this.load.image('soda_can', 'assets/soda_can.png');
-    this.load.image('bg_level1_far', 'assets/bg_level1_far.jpg');
-    this.load.image('bg_level1_skyline', 'assets/bg_level1_skyline.jpg');
-    this.load.image('fire_btn', 'assets/fire_btn.png');
-    this.load.image('fire_btn_pressed', 'assets/fire_btn_pressed.png');
-    this.load.image('jump_btn', 'assets/jump_btn.png');
-    this.load.image('jump_btn_pressed', 'assets/jump_btn_pressed.png');
-    this.load.image('left_btn', 'assets/left_btn.png');
-    this.load.image('left_btn_pressed', 'assets/left_btn_pressed.png');
-    this.load.image('right_btn', 'assets/right_btn.png');
-    this.load.image('right_btn_pressed', 'assets/right_btn_pressed.png');
-    this.load.image('crouch_btn', 'assets/crouch_btn.png');
-    this.load.image('crouch_btn_pressed', 'assets/crouch_btn_pressed.png');
-    this.load.image('splash_screen', 'assets/splash_screen.png');
-    this.load.image('hp_bar_0', 'assets/hp_bar_0.png');
-    this.load.image('hp_bar_1', 'assets/hp_bar_1.png');
-    this.load.image('hp_bar_2', 'assets/hp_bar_2.png');
-    this.load.image('hp_bar_3', 'assets/hp_bar_3.png');
-    this.load.image('lives_0', 'assets/lives_0.png');
-    this.load.image('lives_1', 'assets/lives_1.png');
-    this.load.image('lives_2', 'assets/lives_2.png');
-    this.load.image('lives_3', 'assets/lives_3.png');
-
-    // Generated utility textures
-    const g = this.make.graphics({x:0,y:0,add:false});
-    g.clear(); g.fillStyle(0xff2244);
-    g.fillRect(2,4,4,6); g.fillRect(10,4,4,6); g.fillRect(0,6,16,6);
-    g.fillRect(2,12,12,4); g.fillRect(4,16,8,4); g.fillRect(6,18,4,2);
-    g.generateTexture('heart',16,20);
-    g.clear(); g.fillStyle(0x2a1f0e); g.fillRect(0,0,32,32);
-    g.fillStyle(0x3d2e1a); g.fillRect(0,0,32,6);
-    g.generateTexture('ground',32,32);
-    g.clear(); g.fillStyle(0x3d2e1a); g.fillRect(0,0,32,16);
-    g.fillStyle(0x5a4428); g.fillRect(0,0,32,4);
-    g.generateTexture('platform',32,16);
-    g.clear(); g.fillStyle(0xff6600); g.fillEllipse(20,20,40,40);
-    g.fillStyle(0xffff00); g.fillEllipse(20,20,20,20);
-    g.generateTexture('explosion',40,40);
-    g.clear(); g.fillStyle(0x2244ff,0.7); g.fillEllipse(16,5,32,10);
-    g.generateTexture('puddle',32,10);
-    g.clear(); g.fillStyle(0xffdd00); g.fillRect(0,0,24,24);
-    g.fillStyle(0xff8800); g.fillRect(0,0,24,4); g.fillRect(0,20,24,4); g.fillRect(0,0,4,24); g.fillRect(20,0,4,24);
-    g.fillStyle(0xff0000); g.fillRect(10,4,4,16); g.fillRect(4,10,16,4);
-    g.generateTexture('mysterybox',24,24);
-    g.clear(); g.fillStyle(0xff6600); g.fillRect(0,1,8,4);
-    g.generateTexture('enemybullet',8,6);
-    g.clear(); g.fillStyle(0xffffff); g.fillRect(0,0,1,1);
-    g.generateTexture('pixel',1,1);
+    this.load.image('player','assets/player.png');
+    this.load.image('player_idle_b','assets/player_idle_b.png');
+    this.load.image('player_run_a','assets/player_run_a.png');
+    this.load.image('player_run_b','assets/player_run_b.png');
+    this.load.image('player_jump','assets/player_jump.png');
+    this.load.image('player_crouch','assets/player_crouch.png');
+    this.load.image('player_crouch_b','assets/player_crouch_b.png');
+    this.load.image('player_crouch_wounded','assets/player_crouch_wounded.png');
+    this.load.image('player_dead','assets/player_dead.png');
+    this.load.image('player_victory','assets/player_victory.png');
+    this.load.image('slime_a','assets/slime_a.png');
+    this.load.image('slime_b','assets/slime_b.png');
+    this.load.image('bat_a','assets/bat_a.png');
+    this.load.image('bat_b','assets/bat_b.png');
+    this.load.image('drone_a','assets/drone_a.png');
+    this.load.image('drone_b','assets/drone_b.png');
+    this.load.image('recliner_idle','assets/recliner_idle.png');
+    this.load.image('recliner_charge','assets/recliner_charge.png');
+    this.load.image('boss_king_a','assets/boss_king_a.png');
+    this.load.image('boss_king_b','assets/boss_king_b.png');
+    this.load.image('boss_soda_shot','assets/boss_soda_shot.png');
+    this.load.image('bullet','assets/bullet.png');
+    this.load.image('enemy_bullet','assets/enemy_bullet.png');
+    this.load.image('fx_slime_hit','assets/fx_slime_hit.png');
+    this.load.image('fx_slime_death','assets/fx_slime_death.png');
+    this.load.image('fx_bat_hit','assets/fx_bat_hit.png');
+    this.load.image('fx_bat_death','assets/fx_bat_death.png');
+    this.load.image('fx_drone_death','assets/fx_drone_death.png');
+    this.load.image('fx_explosion','assets/fx_explosion.png');
+    this.load.image('fx_barrel_explode','assets/fx_barrel_explode.png');
+    this.load.image('fx_barrel_burst','assets/fx_barrel_burst.png');
+    this.load.image('pickup_shake','assets/pickup_shake.png');
+    this.load.image('pickup_mystery','assets/pickup_mystery.png');
+    this.load.image('pickup_coin','assets/pickup_coin.png');
+    this.load.image('floor_real','assets/floor_real.jpg');
+    this.load.image('ground_plain','assets/ground_plain.png');
+    this.load.image('ground_slime','assets/ground_slime.png');
+    this.load.image('ground_vent','assets/ground_vent.png');
+    this.load.image('ground_debris','assets/ground_debris.png');
+    this.load.image('ground_cola','assets/ground_cola.png');
+    this.load.image('ground_clean','assets/ground_clean.png');
+    this.load.image('platform_block','assets/platform_block.png');
+    this.load.image('prop_tv','assets/prop_tv.png');
+    this.load.image('prop_couch','assets/prop_couch.png');
+    this.load.image('apt_door','assets/apt_door.png');
+    this.load.image('barrel','assets/barrel.png');
+    this.load.image('prop_barricade','assets/prop_barricade.png');
+    this.load.image('prop_cone','assets/prop_cone.png');
+    this.load.image('prop_treadmill','assets/prop_treadmill.png');
+    this.load.image('prop_vending_chips','assets/prop_vending_chips.png');
+    this.load.image('prop_billboard_gym','assets/prop_billboard_gym.png');
+    this.load.image('prop_billboard_noex','assets/prop_billboard_noex.png');
+    this.load.image('prop_fence_gate','assets/prop_fence_gate.png');
+    this.load.image('prop_steam_vent','assets/prop_steam_vent.png');
+    this.load.image('steam_off','assets/steam_off.png');
+    this.load.image('exit_gate','assets/exit_gate.jpg');
+    this.load.image('pizza_box','assets/pizza_box.png');
+    this.load.image('soda_can','assets/soda_can.png');
+    this.load.image('bg_level1_far','assets/bg_level1_far.jpg');
+    this.load.image('bg_level1_skyline','assets/bg_level1_skyline.jpg');
+    this.load.image('fire_btn','assets/fire_btn.png');
+    this.load.image('fire_btn_pressed','assets/fire_btn_pressed.png');
+    this.load.image('jump_btn','assets/jump_btn.png');
+    this.load.image('jump_btn_pressed','assets/jump_btn_pressed.png');
+    this.load.image('left_btn','assets/left_btn.png');
+    this.load.image('left_btn_pressed','assets/left_btn_pressed.png');
+    this.load.image('right_btn','assets/right_btn.png');
+    this.load.image('right_btn_pressed','assets/right_btn_pressed.png');
+    this.load.image('crouch_btn','assets/crouch_btn.png');
+    this.load.image('crouch_btn_pressed','assets/crouch_btn_pressed.png');
+    this.load.image('splash_screen','assets/splash_screen.png');
+    this.load.image('hp_bar_0','assets/hp_bar_0.png');
+    this.load.image('hp_bar_1','assets/hp_bar_1.png');
+    this.load.image('hp_bar_2','assets/hp_bar_2.png');
+    this.load.image('hp_bar_3','assets/hp_bar_3.png');
+    this.load.image('lives_0','assets/lives_0.png');
+    this.load.image('lives_1','assets/lives_1.png');
+    this.load.image('lives_2','assets/lives_2.png');
+    this.load.image('lives_3','assets/lives_3.png');
+    const g=this.make.graphics({x:0,y:0,add:false});
+    g.clear();g.fillStyle(0xff2244);g.fillRect(2,4,4,6);g.fillRect(10,4,4,6);g.fillRect(0,6,16,6);g.fillRect(2,12,12,4);g.fillRect(4,16,8,4);g.fillRect(6,18,4,2);g.generateTexture('heart',16,20);
+    g.clear();g.fillStyle(0x2a1f0e);g.fillRect(0,0,32,32);g.fillStyle(0x3d2e1a);g.fillRect(0,0,32,6);g.generateTexture('ground',32,32);
+    g.clear();g.fillStyle(0x3d2e1a);g.fillRect(0,0,32,16);g.fillStyle(0x5a4428);g.fillRect(0,0,32,4);g.generateTexture('platform',32,16);
+    g.clear();g.fillStyle(0xff6600);g.fillEllipse(20,20,40,40);g.fillStyle(0xffff00);g.fillEllipse(20,20,20,20);g.generateTexture('explosion',40,40);
+    g.clear();g.fillStyle(0x2244ff,0.7);g.fillEllipse(16,5,32,10);g.generateTexture('puddle',32,10);
+    g.clear();g.fillStyle(0xffdd00);g.fillRect(0,0,24,24);g.fillStyle(0xff8800);g.fillRect(0,0,24,4);g.fillRect(0,20,24,4);g.fillRect(0,0,4,24);g.fillRect(20,0,4,24);g.fillStyle(0xff0000);g.fillRect(10,4,4,16);g.fillRect(4,10,16,4);g.generateTexture('mysterybox',24,24);
+    g.clear();g.fillStyle(0xff6600);g.fillRect(0,1,8,4);g.generateTexture('enemybullet',8,6);
     g.destroy();
   }
   create() { this.scene.start('StartScreen'); }
@@ -178,25 +160,12 @@ class IntroVideoScene extends Phaser.Scene {
 class StartScreenScene extends Phaser.Scene {
   constructor() { super('StartScreen'); }
   create() {
-    // Black base
     this.add.rectangle(W/2,H/2,W,H,0x000000);
-    // Full-screen splash image - scale to fit while preserving aspect ratio
-    const splash = this.add.image(W/2, H/2, 'splash_screen').setOrigin(0.5);
-    const scaleX = W / splash.width;
-    const scaleY = H / splash.height;
-    splash.setScale(Math.max(scaleX, scaleY));
-    // Subtle vignette overlay
-    const vg = this.add.graphics();
-    vg.fillGradientStyle(0x000000,0x000000,0x000000,0x000000,0.55,0.55,0,0);
-    vg.fillRect(0,0,W,H*0.35);
-    vg.fillGradientStyle(0x000000,0x000000,0x000000,0x000000,0,0,0.6,0.6);
-    vg.fillRect(0,H*0.65,W,H*0.35);
-    // Controls hint at very bottom
-    this.add.text(W/2,H-12,'ARROW KEYS + Z/X  |  MOBILE: ON-SCREEN CONTROLS',{fontSize:'10px',fontFamily:'Courier New',color:'#888866',stroke:'#000',strokeThickness:1}).setOrigin(0.5);
-    // Blinking prompt - just add a subtle pulse on the existing "PRESS TO START" text in the image
-    // Add a transparent overlay flash to draw attention
-    const flash = this.add.rectangle(W/2, H*0.83, 420, 58, 0xffaa00, 0).setOrigin(0.5);
-    this.tweens.add({targets:flash, alpha:0.12, duration:550, yoyo:true, repeat:-1});
+    const splash=this.add.image(W/2,H/2,'splash_screen').setOrigin(0.5);
+    splash.setScale(Math.max(W/splash.width,H/splash.height));
+    const flash=this.add.rectangle(W/2,H*0.83,420,58,0xffaa00,0).setOrigin(0.5);
+    this.tweens.add({targets:flash,alpha:0.12,duration:550,yoyo:true,repeat:-1});
+    this.add.text(W/2,H-12,'ARROW KEYS + Z/X  |  MOBILE: ON-SCREEN CONTROLS',{fontSize:'10px',fontFamily:'Courier New',color:'#888866'}).setOrigin(0.5);
     this.input.once('pointerdown',()=>this.scene.start('Intro'));
     this.input.keyboard.once('keydown',()=>this.scene.start('Intro'));
   }
@@ -208,7 +177,6 @@ class StartScreenScene extends Phaser.Scene {
 class IntroScene extends Phaser.Scene {
   constructor() { super('Intro'); }
   create() {
-    // Skip straight to Level0 - the speech bubble shows there instead
     this.scene.start('Level0');
   }
 }
@@ -230,8 +198,6 @@ class BaseLevelScene extends Phaser.Scene {
     this.invincibleTimer = 0;
     this.levelComplete = false;
     this.gameOver = false;
-    this.invincible = false;
-    this.invincibleTimer = 0;
     this.steamVents = [];
     this.exitTriggered = false;
     this._idleTimer=0; this._idleFrame=0;
@@ -267,21 +233,19 @@ class BaseLevelScene extends Phaser.Scene {
         // Visual tileSprite
         const platTextures = ['ground_plain','ground_slime','ground_cola','ground_debris'];
         const platIdx = Math.floor(cx/800) % platTextures.length;
-        // Platform visual: show top portion of the stone texture
-        this.add.tileSprite(cx, p.y+16, pw, 80, platTextures[platIdx])
-          .setDepth(9).setTileScale(1,1);
+        this.add.tileSprite(cx, p.y+10, pw, 40, platTextures[platIdx])
+          .setDepth(9).setTileScale(3,3);
       });
     }
   }
 
     createPlayer(x,y) {
     this.player = this.physics.add.sprite(x,y,'player');
-    this.player.setOrigin(0.5, 1.0);
     this.player.setCollideWorldBounds(false);
     this.player.setBounce(0);
     this.player.body.setGravityY(500);
     this.player.body.setSize(48,50);
-    this.player.body.setOffset(28, 0);
+    this.player.body.setOffset(9,8);
     this.player.body.setMaxVelocityY(600);
     this.physics.add.collider(this.player,this.platforms);
     this.cameras.main.setBounds(0,0,this.levelWidth,H);
@@ -296,22 +260,12 @@ class BaseLevelScene extends Phaser.Scene {
   }
 
   createHUD() {
-    // HP bar image - goblin head + red bar, bottom-left
-    // Display at a readable size: the image is landscape ~4:1 ratio
-    const hpBarW = 260, hpBarH = 84;
-    this.hpBarImg = this.add.image(4, 4, 'hp_bar_3')
-      .setScrollFactor(0).setDepth(100).setOrigin(0, 0).setDisplaySize(hpBarW, hpBarH);
-
-    // Lives dog tags - top-left, under score
-    const livesW = 140, livesH = 70;
-    this.livesImg = this.add.image(W-4, 4, 'lives_3')
-      .setScrollFactor(0).setDepth(100).setOrigin(1, 0).setDisplaySize(livesW, livesH);
-
-    // Score - top center, below HUD items
-    this.scoreText = this.add.text(W/2,4,`${GameState.score}`,{fontSize:'18px',fontFamily:'Impact, Arial Black',color:'#ffdd00',stroke:'#000',strokeThickness:3}).setScrollFactor(0).setDepth(100).setOrigin(0.5,0);
-
-    // Powerup text - above HP bar
-    this.powerupText = this.add.text(14, H-hpBarH-28,'',{fontSize:'11px',fontFamily:'Courier New',color:'#ff8800',stroke:'#000',strokeThickness:1}).setScrollFactor(0).setDepth(100);
+    const hpBarW=260,hpBarH=84;
+    this.hpBarImg=this.add.image(4,4,'hp_bar_3').setScrollFactor(0).setDepth(100).setOrigin(0,0).setDisplaySize(hpBarW,hpBarH);
+    const livesW=140,livesH=70;
+    this.livesImg=this.add.image(W-4,4,'lives_3').setScrollFactor(0).setDepth(100).setOrigin(1,0).setDisplaySize(livesW,livesH);
+    this.scoreText=this.add.text(W/2,4,`${GameState.score}`,{fontSize:'18px',fontFamily:'Impact, Arial Black',color:'#ffdd00',stroke:'#000',strokeThickness:3}).setScrollFactor(0).setDepth(100).setOrigin(0.5,0);
+    this.powerupText=this.add.text(W-8,H-hpBarH-12,'',{fontSize:'11px',fontFamily:'Courier New',color:'#ff8800'}).setScrollFactor(0).setDepth(100).setOrigin(1,1);
 
     const lc = this.levelConfig;
     if(lc.title) {
@@ -320,50 +274,24 @@ class BaseLevelScene extends Phaser.Scene {
       this.tweens.add({targets:[lt,lf],alpha:1,duration:500,hold:2000,onComplete:()=>{this.tweens.add({targets:[lt,lf],alpha:0,duration:500});}});
     }
     this.updateHPDisplay();
-    this.updateLivesDisplay();
   }
 
   createMobileControls() {
     const btnAlpha=0.7;
     this.touchBtnGfx = this.add.graphics().setScrollFactor(0).setDepth(101);
     this.btnZones = {
-      left:  {x:8,   y:H-112,w:75,h:75},
-      right: {x:91,  y:H-112,w:75,h:75},
-      crouch:{x:8,   y:H-52, w:158,h:48},
+      left:  {x:8,y:H-112,w:75,h:75},
+      right: {x:91,y:H-112,w:75,h:75},
+      crouch:{x:8,y:H-52,w:158,h:48},
       jump:  {x:W-110,y:H-115,w:100,h:100},
       shoot: {x:W-218,y:H-115,w:100,h:100},
     };
     this.drawTouchButtons();
-    // Left button image
-    const leftZ = this.btnZones.left;
-    this.leftBtn = this.add.image(leftZ.x+leftZ.w/2, leftZ.y+leftZ.h/2, 'left_btn')
-      .setScrollFactor(0).setDepth(102).setDisplaySize(leftZ.w, leftZ.h).setOrigin(0.5);
-    // Right button image
-    const rightZ = this.btnZones.right;
-    this.rightBtn = this.add.image(rightZ.x+rightZ.w/2, rightZ.y+rightZ.h/2, 'right_btn')
-      .setScrollFactor(0).setDepth(102).setDisplaySize(rightZ.w, rightZ.h).setOrigin(0.5);
-    // Crouch button image
-    const crouchZ = this.btnZones.crouch;
-    this.crouchBtn = this.add.image(crouchZ.x+crouchZ.w/2, crouchZ.y+crouchZ.h/2, 'crouch_btn')
-      .setScrollFactor(0).setDepth(102).setDisplaySize(crouchZ.w, crouchZ.h).setOrigin(0.5);
-    // Jump button image
-    const jumpZ = this.btnZones.jump;
-    if(this.textures && this.textures.exists('jump_btn')) {
-      this.jumpBtn = this.add.image(jumpZ.x + jumpZ.w/2, jumpZ.y + jumpZ.h/2, 'jump_btn')
-        .setScrollFactor(0).setDepth(102).setDisplaySize(jumpZ.w, jumpZ.h).setOrigin(0.5);
-    } else {
-      this.add.text(W-41,H-58,'A',{fontSize:'26px',fontFamily:'Arial Black',color:'#44ff44',stroke:'#000',strokeThickness:3}).setScrollFactor(0).setDepth(102).setOrigin(0.5);
-      this.add.text(W-41,H-30,'JUMP',{fontSize:'9px',fontFamily:'Courier New',color:'#aaffaa'}).setScrollFactor(0).setDepth(102).setOrigin(0.5);
-    }
-    // Fire button image - use image asset if loaded, else text fallback
-    const shootZ = this.btnZones.shoot;
-    if(this.textures && this.textures.exists('fire_btn')) {
-      this.fireBtn = this.add.image(shootZ.x + shootZ.w/2, shootZ.y + shootZ.h/2, 'fire_btn')
-        .setScrollFactor(0).setDepth(102).setDisplaySize(shootZ.w, shootZ.h).setOrigin(0.5);
-    } else {
-      this.add.text(W-116,H-58,'B',{fontSize:'26px',fontFamily:'Arial Black',color:'#ff4400',stroke:'#000',strokeThickness:3}).setScrollFactor(0).setDepth(102).setOrigin(0.5);
-      this.add.text(W-116,H-30,'FIRE',{fontSize:'9px',fontFamily:'Courier New',color:'#ffaaaa'}).setScrollFactor(0).setDepth(102).setOrigin(0.5);
-    }
+    const leftZ=this.btnZones.left;this.leftBtn=this.add.image(leftZ.x+leftZ.w/2,leftZ.y+leftZ.h/2,'left_btn').setScrollFactor(0).setDepth(102).setDisplaySize(leftZ.w,leftZ.h).setOrigin(0.5);
+    const rightZ=this.btnZones.right;this.rightBtn=this.add.image(rightZ.x+rightZ.w/2,rightZ.y+rightZ.h/2,'right_btn').setScrollFactor(0).setDepth(102).setDisplaySize(rightZ.w,rightZ.h).setOrigin(0.5);
+    const crouchZ=this.btnZones.crouch;this.crouchBtn=this.add.image(crouchZ.x+crouchZ.w/2,crouchZ.y+crouchZ.h/2,'crouch_btn').setScrollFactor(0).setDepth(102).setDisplaySize(crouchZ.w,crouchZ.h).setOrigin(0.5);
+    const jumpZ=this.btnZones.jump;this.jumpBtn=this.add.image(jumpZ.x+jumpZ.w/2,jumpZ.y+jumpZ.h/2,'jump_btn').setScrollFactor(0).setDepth(102).setDisplaySize(jumpZ.w,jumpZ.h).setOrigin(0.5);
+    const shootZ=this.btnZones.shoot;this.fireBtn=this.add.image(shootZ.x+shootZ.w/2,shootZ.y+shootZ.h/2,'fire_btn').setScrollFactor(0).setDepth(102).setDisplaySize(shootZ.w,shootZ.h).setOrigin(0.5);
 
     this.touchLeft=false; this.touchRight=false; this.touchJump=false; this.touchShoot=false; this.touchCrouch=false;
     this.touchJumpJustPressed=false;
@@ -407,42 +335,11 @@ class BaseLevelScene extends Phaser.Scene {
     if(!this.touchBtnGfx) return;
     const g=this.touchBtnGfx; g.clear();
     const draw=(z,col,act)=>{ g.fillStyle(col,act?0.9:0.45); g.fillRoundedRect(z.x,z.y,z.w,z.h,8); g.lineStyle(2,0xffffff,0.5); g.strokeRoundedRect(z.x,z.y,z.w,z.h,8); };
-    // Left button
-    if(this.leftBtn) {
-      this.leftBtn.setTexture(this.touchLeft ? 'left_btn_pressed' : 'left_btn');
-      const lz=this.btnZones.left; this.leftBtn.setDisplaySize(lz.w,lz.h);
-    } else { draw(this.btnZones.left, 0x2244aa, this.touchLeft); }
-    // Right button
-    if(this.rightBtn) {
-      this.rightBtn.setTexture(this.touchRight ? 'right_btn_pressed' : 'right_btn');
-      const rz=this.btnZones.right; this.rightBtn.setDisplaySize(rz.w,rz.h);
-    } else { draw(this.btnZones.right, 0x2244aa, this.touchRight); }
-    // Crouch button
-    if(this.crouchBtn) {
-      this.crouchBtn.setTexture(this.touchCrouch ? 'crouch_btn_pressed' : 'crouch_btn');
-      const cz=this.btnZones.crouch; this.crouchBtn.setDisplaySize(cz.w,cz.h);
-    } else { draw(this.btnZones.crouch, 0x886600, this.touchCrouch); }
-    // jump button drawn via image below
-    // Fire button: use image if available, else fallback rect
-    if(this.jumpBtn) {
-      const jtex = this.touchJump ? 'jump_btn_pressed' : 'jump_btn';
-      if(this.textures && this.textures.exists(jtex)) {
-        this.jumpBtn.setTexture(jtex);
-        this.jumpBtn.setDisplaySize(this.btnZones.jump.w, this.btnZones.jump.h);
-      }
-    } else {
-      draw(this.btnZones.jump, 0x006622,this.touchJump);
-    }
-    if(this.fireBtn) {
-      const tex = this.touchShoot ? 'fire_btn_pressed' : 'fire_btn';
-      const sz = this.btnZones.shoot;
-      if(this.textures && this.textures.exists(tex)) this.fireBtn.setTexture(tex);
-      // Always lock size and position so pressed texture can't shift it
-      this.fireBtn.setDisplaySize(sz.w, sz.h);
-      this.fireBtn.setPosition(sz.x + sz.w/2, sz.y + sz.h/2);
-    } else {
-      draw(this.btnZones.shoot, 0x660011,this.touchShoot);
-    }
+    if(this.leftBtn){this.leftBtn.setTexture(this.touchLeft?'left_btn_pressed':'left_btn');const z=this.btnZones.left;this.leftBtn.setDisplaySize(z.w,z.h);}else{draw(this.btnZones.left,0x2244aa,this.touchLeft);}
+    if(this.rightBtn){this.rightBtn.setTexture(this.touchRight?'right_btn_pressed':'right_btn');const z=this.btnZones.right;this.rightBtn.setDisplaySize(z.w,z.h);}else{draw(this.btnZones.right,0x2244aa,this.touchRight);}
+    if(this.crouchBtn){this.crouchBtn.setTexture(this.touchCrouch?'crouch_btn_pressed':'crouch_btn');const z=this.btnZones.crouch;this.crouchBtn.setDisplaySize(z.w,z.h);}else{draw(this.btnZones.crouch,0x886600,this.touchCrouch);}
+    if(this.jumpBtn){this.jumpBtn.setTexture(this.touchJump?'jump_btn_pressed':'jump_btn');const z=this.btnZones.jump;this.jumpBtn.setDisplaySize(z.w,z.h);this.jumpBtn.setPosition(z.x+z.w/2,z.y+z.h/2);}else{draw(this.btnZones.jump,0x006622,this.touchJump);}
+    if(this.fireBtn){this.fireBtn.setTexture(this.touchShoot?'fire_btn_pressed':'fire_btn');const z=this.btnZones.shoot;this.fireBtn.setDisplaySize(z.w,z.h);this.fireBtn.setPosition(z.x+z.w/2,z.y+z.h/2);}else{draw(this.btnZones.shoot,0x660011,this.touchShoot);}
   }
 
   createKeyboard() {
@@ -552,23 +449,12 @@ class BaseLevelScene extends Phaser.Scene {
     this.gameOver=true;
     this.player.setTexture('player_dead');
     this.player.setVelocity(0,0);
-    this.player.body.setGravityY(0);
-    // Disable all enemies
-    if(this.enemies) this.enemies.getChildren().forEach(e=>{ if(e.body) e.body.enable=false; });
-    const key = this.scene.key;
-    const lives = GameState.lives;
-    window.setTimeout(() => {
-      if(lives<=0){
-        GameState.reset();
-        this.scene.start('StartScreen');
-      } else {
-        GameState.hp=3;
-        // Stop everything then restart scene
-        this.physics.world.isPaused = false;
-        this.scene.stop(key);
-        this.scene.start(key);
-      }
-    }, 1600);
+    if(this.enemies) this.enemies.getChildren().forEach(e=>{if(e.body)e.body.enable=false;});
+    const key=this.scene.key,lives=GameState.lives;
+    window.setTimeout(()=>{
+      if(lives<=0){GameState.reset();this.scene.start('StartScreen');}
+      else{GameState.hp=3;this.scene.stop(key);this.scene.start(key);}
+    },1600);
   }
 
   killEnemy(enemy) {
@@ -618,14 +504,12 @@ class BaseLevelScene extends Phaser.Scene {
   }
 
   checkEnemyPlayerCollision() {
-    if(!this.enemies || this.invincible || !this.player || !this.player.active) return;
-    const px = this.player.x, py = this.player.y;
-    // Use tighter radius - player body is ~30px wide, slime visible body ~50px
-    this.enemies.getChildren().forEach(e => {
+    if(!this.enemies||this.invincible||!this.player||!this.player.active) return;
+    const px=this.player.x,py=this.player.y;
+    this.enemies.getChildren().forEach(e=>{
       if(!e.active) return;
-      const dx = Math.abs(px - e.x), dy = Math.abs(py - e.y);
-      // Only trigger if within 55px horizontal AND 40px vertical
-      if(dx < 55 && dy < 40) { this.takeDamage(); }
+      const dx=Math.abs(px-e.x),dy=Math.abs(py-e.y);
+      if(dx<55&&dy<40){this.takeDamage();}
     });
   }
 
@@ -663,17 +547,9 @@ class BaseLevelScene extends Phaser.Scene {
     this.tweens.add({targets:t,scaleX:1.2,scaleY:1.2,yoyo:true,repeat:2,duration:300,onComplete:()=>{ this.time.delayedCall(500,()=>this.scene.start(nextScene)); }});
   }
 
-  updateHPDisplay() {
-    if(!this.hpBarImg) return;
-    const tex = ['hp_bar_0','hp_bar_1','hp_bar_2','hp_bar_3'][Math.max(0,Math.min(3,GameState.hp))];
-    if(this.textures && this.textures.exists(tex)) this.hpBarImg.setTexture(tex);
-  }
+  updateHPDisplay() { if(!this.hpBarImg) return; const tex=['hp_bar_0','hp_bar_1','hp_bar_2','hp_bar_3'][Math.max(0,Math.min(3,GameState.hp))]; this.hpBarImg.setTexture(tex); }
   updateScoreDisplay() { this.scoreText&&this.scoreText.setText(`${GameState.score}`); }
-  updateLivesDisplay() {
-    if(!this.livesImg) return;
-    const tex = ['lives_0','lives_1','lives_2','lives_3'][Math.max(0,Math.min(3,GameState.lives))];
-    if(this.textures && this.textures.exists(tex)) this.livesImg.setTexture(tex);
-  }
+  updateLivesDisplay() { if(!this.livesImg) return; const tex=['lives_0','lives_1','lives_2','lives_3'][Math.max(0,Math.min(3,GameState.lives))]; this.livesImg.setTexture(tex); }
   updatePowerupDisplay() { let s=''; if(GameState.hasRapidFire) s+='[RAPID] '; if(GameState.hasSpreadShot) s+='[SPREAD]'; this.powerupText&&this.powerupText.setText(s); }
 
   updateSteamVents(dt) {
@@ -752,31 +628,21 @@ class Level0Scene extends BaseLevelScene {
 
     this.exitX = this.levelWidth - 70;
 
-    this.createPlayer(80, 338);
+    this.createPlayer(80, 305);
     this.player.setDepth(10);
     this.createBullets();
     this.createHUD();
     this.createMobileControls();
     this.createKeyboard();
-
-    // Floating speech bubble above player pointing to exit - auto-dismisses
-    this.time.delayedCall(800, () => {
-      const bx = W/2, by = 80;
-      const bg = this.add.graphics().setDepth(200).setScrollFactor(0);
-      bg.fillStyle(0x000000, 0.88); bg.fillRoundedRect(bx-170, by-30, 340, 52, 10);
-      bg.lineStyle(2, 0x44ff44); bg.strokeRoundedRect(bx-170, by-30, 340, 52, 10);
-      const txt = this.add.text(bx-30, by-4, 'TIME TO HIT THE GYM!', {
-        fontSize:'17px', fontFamily:'Impact, Arial Black',
-        color:'#44ff44', stroke:'#000', strokeThickness:2
-      }).setOrigin(0.5).setDepth(201).setScrollFactor(0);
-      const arrow = this.add.text(bx+120, by-4, '>>>', {
-        fontSize:'15px', fontFamily:'Courier New', color:'#ffaa00'
-      }).setOrigin(0.5).setDepth(201).setScrollFactor(0);
-      this.tweens.add({targets:arrow, x:arrow.x+8, duration:350, yoyo:true, repeat:-1});
-      this.time.delayedCall(4000, () => {
-        this.tweens.add({targets:[bg,txt,arrow], alpha:0, duration:600,
-          onComplete:()=>{ bg.destroy(); txt.destroy(); arrow.destroy(); }});
-      });
+    this.time.delayedCall(800,()=>{
+      const bx=W/2,by=80;
+      const bg=this.add.graphics().setDepth(200).setScrollFactor(0);
+      bg.fillStyle(0x000000,0.88);bg.fillRoundedRect(bx-170,by-30,340,52,10);
+      bg.lineStyle(2,0x44ff44);bg.strokeRoundedRect(bx-170,by-30,340,52,10);
+      const txt=this.add.text(bx-30,by-4,'TIME TO HIT THE GYM!',{fontSize:'17px',fontFamily:'Impact, Arial Black',color:'#44ff44',stroke:'#000',strokeThickness:2}).setOrigin(0.5).setDepth(201).setScrollFactor(0);
+      const arr=this.add.text(bx+120,by-4,'>>>',{fontSize:'15px',fontFamily:'Courier New',color:'#ffaa00'}).setOrigin(0.5).setDepth(201).setScrollFactor(0);
+      this.tweens.add({targets:arr,x:arr.x+8,duration:350,yoyo:true,repeat:-1});
+      this.time.delayedCall(4000,()=>{this.tweens.add({targets:[bg,txt,arr],alpha:0,duration:600,onComplete:()=>{bg.destroy();txt.destroy();arr.destroy();}});});
     });
 
     // Tutorial slimes - fewer, more spread out
@@ -799,8 +665,7 @@ class Level0Scene extends BaseLevelScene {
   }
 
   update(time,delta) {
-    if(this.gameOver || this.levelComplete) return;
-    // debug removed
+    if(this.gameOver||this.levelComplete) return;
     this.updatePlayer(delta);
     if(this.enemies) {
       this.enemies.getChildren().forEach(e=>{
@@ -855,9 +720,6 @@ class Level1Scene extends BaseLevelScene {
       {x:3000, y:H-170, tiles:3},
       {x:3500, y:H-205, tiles:2},
     ], 'ground_plain');
-    // Also draw main walkway strip with real texture
-    this.add.tileSprite(this.levelWidth/2, H-80, this.levelWidth, 160, 'ground_plain')
-      .setDepth(7).setTileScale(1, 1);
 
     // Billboards - depth 3, behind skyline layer, scroll with level slightly
     [[700,GY-130,'prop_billboard_noex'],[1800,GY-130,'prop_billboard_gym'],[2900,GY-130,'prop_billboard_noex']].forEach(([x,y,t])=>{
@@ -896,7 +758,7 @@ class Level1Scene extends BaseLevelScene {
       }});
     });
 
-    this.createPlayer(60, 305);
+    this.createPlayer(60, 309);
     this.player.setDepth(10);
     this.createBullets();
 
@@ -956,6 +818,7 @@ class Level1Scene extends BaseLevelScene {
   }
 
   update(time,delta) {
+    if(this.gameOver||this.levelComplete) return;
     this.updatePlayer(delta);
 
     if(this.enemies) {
