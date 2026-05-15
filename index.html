@@ -277,8 +277,8 @@ class BaseLevelScene extends Phaser.Scene {
     this.player.setCollideWorldBounds(false);
     this.player.setBounce(0);
     this.player.body.setGravityY(500);
-    this.player.body.setSize(44,60);
-    this.player.body.setOffset(30,82);
+    this.player.body.setSize(48,50);
+    this.player.body.setOffset(9,8);
     this.player.body.setMaxVelocityY(600);
     this.physics.add.collider(this.player,this.platforms);
     this.cameras.main.setBounds(0,0,this.levelWidth,H);
