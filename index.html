@@ -206,18 +206,8 @@ class StartScreenScene extends Phaser.Scene {
 class IntroScene extends Phaser.Scene {
   constructor() { super('Intro'); }
   create() {
-    this.add.rectangle(W/2,H/2,W,H,0x1a1008);
-
-    const box = this.add.graphics();
-    box.fillStyle(0x000000,0.85); box.fillRect(W/2-200,H/2-60,400,120);
-    box.lineStyle(3,0x44ff44); box.strokeRect(W/2-200,H/2-60,400,120);
-    this.add.text(W/2,H/2-20,'TIME TO HIT THE GYM.',{fontSize:'24px',fontFamily:'Impact, Arial Black',color:'#44ff44'}).setOrigin(0.5);
-    const arrow = this.add.text(W/2+120,H/2+20,'>>>',{fontSize:'28px',fontFamily:'Courier New',color:'#ffaa00'}).setOrigin(0.5);
-    this.tweens.add({targets:arrow,x:arrow.x+12,duration:400,yoyo:true,repeat:-1});
-    const sub = this.add.text(W/2,H/2+40,'TAP / PRESS ANY KEY TO BEGIN',{fontSize:'13px',fontFamily:'Courier New',color:'#888888'}).setOrigin(0.5);
-    this.tweens.add({targets:sub,alpha:0.3,duration:700,yoyo:true,repeat:-1});
-    this.input.once('pointerdown',()=>this.scene.start('Level0'));
-    this.input.keyboard.once('keydown',()=>this.scene.start('Level0'));
+    // Skip straight to Level0 - the speech bubble shows there instead
+    this.scene.start('Level0');
   }
 }
 
@@ -238,6 +228,8 @@ class BaseLevelScene extends Phaser.Scene {
     this.invincibleTimer = 0;
     this.levelComplete = false;
     this.gameOver = false;
+    this.invincible = false;
+    this.invincibleTimer = 0;
     this.steamVents = [];
     this.exitTriggered = false;
     this._idleTimer=0; this._idleFrame=0;
@@ -332,11 +324,11 @@ class BaseLevelScene extends Phaser.Scene {
     const btnAlpha=0.7;
     this.touchBtnGfx = this.add.graphics().setScrollFactor(0).setDepth(101);
     this.btnZones = {
-      left:  {x:8,   y:H-100,w:72,h:72},
-      right: {x:88,  y:H-100,w:72,h:72},
-      crouch:{x:8,   y:H-24, w:152,h:36},
-      jump:  {x:W-105,y:H-105,w:95,h:95},
-      shoot: {x:W-210,y:H-105,w:95,h:95},
+      left:  {x:8,   y:H-112,w:75,h:75},
+      right: {x:91,  y:H-112,w:75,h:75},
+      crouch:{x:8,   y:H-52, w:158,h:48},
+      jump:  {x:W-110,y:H-115,w:100,h:100},
+      shoot: {x:W-218,y:H-115,w:100,h:100},
     };
     this.drawTouchButtons();
     // Left button image
@@ -440,11 +432,11 @@ class BaseLevelScene extends Phaser.Scene {
     }
     if(this.fireBtn) {
       const tex = this.touchShoot ? 'fire_btn_pressed' : 'fire_btn';
-      if(this.textures && this.textures.exists(tex)) {
-        this.fireBtn.setTexture(tex);
-        // Force consistent size regardless of texture dimensions
-        this.fireBtn.setDisplaySize(this.btnZones.shoot.w, this.btnZones.shoot.h);
-      }
+      const sz = this.btnZones.shoot;
+      if(this.textures && this.textures.exists(tex)) this.fireBtn.setTexture(tex);
+      // Always lock size and position so pressed texture can't shift it
+      this.fireBtn.setDisplaySize(sz.w, sz.h);
+      this.fireBtn.setPosition(sz.x + sz.w/2, sz.y + sz.h/2);
     } else {
       draw(this.btnZones.shoot, 0x660011,this.touchShoot);
     }
@@ -610,16 +602,11 @@ class BaseLevelScene extends Phaser.Scene {
 
   checkEnemyPlayerCollision() {
     if(!this.enemies || this.invincible || !this.player || !this.player.active) return;
-
-    const playerBounds = this.player.getBounds();
-
+    const pb = this.player.getBounds();
     this.enemies.getChildren().forEach(e => {
       if(!e.active) return;
-
-      // Bounds collision is more reliable than center-distance for squat enemies like slimes.
-      const px=this.player.body.x+this.player.body.width/2, py=this.player.body.y+this.player.body.height/2;
-      const ex=e.body.x+e.body.width/2, ey=e.body.y+e.body.height/2;
-      if(Phaser.Math.Distance.Between(px,py,ex,ey)<(this.player.body.width/2+e.body.width/2)*0.6){this.takeDamage();}
+      const eb = e.getBounds();
+      if(Phaser.Geom.Intersects.RectangleToRectangle(pb, eb)) { this.takeDamage(); }
     });
   }
 
@@ -752,6 +739,26 @@ class Level0Scene extends BaseLevelScene {
     this.createHUD();
     this.createMobileControls();
     this.createKeyboard();
+
+    // Floating speech bubble above player pointing to exit - auto-dismisses
+    this.time.delayedCall(800, () => {
+      const bx = W/2, by = 80;
+      const bg = this.add.graphics().setDepth(200).setScrollFactor(0);
+      bg.fillStyle(0x000000, 0.88); bg.fillRoundedRect(bx-170, by-30, 340, 52, 10);
+      bg.lineStyle(2, 0x44ff44); bg.strokeRoundedRect(bx-170, by-30, 340, 52, 10);
+      const txt = this.add.text(bx-30, by-4, 'TIME TO HIT THE GYM!', {
+        fontSize:'17px', fontFamily:'Impact, Arial Black',
+        color:'#44ff44', stroke:'#000', strokeThickness:2
+      }).setOrigin(0.5).setDepth(201).setScrollFactor(0);
+      const arrow = this.add.text(bx+120, by-4, '>>>', {
+        fontSize:'15px', fontFamily:'Courier New', color:'#ffaa00'
+      }).setOrigin(0.5).setDepth(201).setScrollFactor(0);
+      this.tweens.add({targets:arrow, x:arrow.x+8, duration:350, yoyo:true, repeat:-1});
+      this.time.delayedCall(4000, () => {
+        this.tweens.add({targets:[bg,txt,arrow], alpha:0, duration:600,
+          onComplete:()=>{ bg.destroy(); txt.destroy(); arrow.destroy(); }});
+      });
+    });
 
     // Tutorial slimes - fewer, more spread out
     this.enemies=this.physics.add.group();
