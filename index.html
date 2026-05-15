@@ -242,19 +242,18 @@ class BaseLevelScene extends Phaser.Scene {
   createGround(platforms, groundTex) {
     this.platforms = this.physics.add.staticGroup();
 
-    // Physics ground body
-    const groundBody = this.platforms.create(this.levelWidth/2, H-60, 'pixel');
-    groundBody.setDisplaySize(this.levelWidth+200, 40);
-    groundBody.setAlpha(0);
-    groundBody.refreshBody();
+    // Physics ground - invisible, at H-72
+    const groundBody = this.add.rectangle(this.levelWidth/2, H-72, this.levelWidth+200, 80, 0x000000, 0);
+    this.physics.add.existing(groundBody, true);
+    this.platforms.add(groundBody);
 
     // Visual ground - tileSprite so small tiles repeat crisply
     const gTex = groundTex || 'floor_real';
     const tileH = (gTex === 'floor_real') ? 118 : 160;
-    const groundSpriteY = (gTex === 'floor_real') ? H-72 : H-80;
-    // Use tileScale=1 so PNG textures render at native resolution (crisp and large)
+    const tileScale = (gTex === 'floor_real') ? 1 : 1;
+    const groundSpriteY = (gTex === 'floor_real') ? H-72 : H-152;
     this.add.tileSprite(this.levelWidth/2, groundSpriteY, this.levelWidth, tileH, gTex)
-      .setDepth(8).setTileScale(1, 1);
+      .setDepth(8).setTileScale(tileScale, tileScale);
 
     // Elevated platforms
     if(platforms) {
@@ -262,10 +261,9 @@ class BaseLevelScene extends Phaser.Scene {
         const pw = p.tiles * 96;
         const cx = p.x + pw/2;
         // Invisible physics body
-        const body = this.platforms.create(cx, p.y-10, 'pixel');
-        body.setDisplaySize(pw, 20);
-        body.setAlpha(0);
-        body.refreshBody();
+        const body = this.add.rectangle(cx, p.y, pw, 20, 0x000000, 0);
+        this.physics.add.existing(body, true);
+        this.platforms.add(body);
         // Visual tileSprite
         const platTextures = ['ground_plain','ground_slime','ground_cola','ground_debris'];
         const platIdx = Math.floor(cx/800) % platTextures.length;
@@ -753,7 +751,7 @@ class Level0Scene extends BaseLevelScene {
 
     this.exitX = this.levelWidth - 70;
 
-    this.createPlayer(80, 200);
+    this.createPlayer(80, 305);
     this.player.setDepth(10);
     this.createBullets();
     this.createHUD();
@@ -896,7 +894,7 @@ class Level1Scene extends BaseLevelScene {
       }});
     });
 
-    this.createPlayer(60, 200);
+    this.createPlayer(60, 305);
     this.player.setDepth(10);
     this.createBullets();
 
