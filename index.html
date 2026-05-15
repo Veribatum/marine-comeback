@@ -295,17 +295,17 @@ class BaseLevelScene extends Phaser.Scene {
   createHUD() {
     // HP bar image - goblin head + red bar, bottom-left
     // Display at a readable size: the image is landscape ~4:1 ratio
-    const hpBarW = 240, hpBarH = 60;
-    this.hpBarImg = this.add.image(8, 8, 'hp_bar_3')
+    const hpBarW = 260, hpBarH = 84;
+    this.hpBarImg = this.add.image(4, 4, 'hp_bar_3')
       .setScrollFactor(0).setDepth(100).setOrigin(0, 0).setDisplaySize(hpBarW, hpBarH);
 
     // Lives dog tags - top-left, under score
-    const livesW = 120, livesH = 60;
-    this.livesImg = this.add.image(W-8, 8, 'lives_3')
+    const livesW = 140, livesH = 70;
+    this.livesImg = this.add.image(W-4, 4, 'lives_3')
       .setScrollFactor(0).setDepth(100).setOrigin(1, 0).setDisplaySize(livesW, livesH);
 
     // Score - top center, below HUD items
-    this.scoreText = this.add.text(W/2,14,`${GameState.score}`,{fontSize:'16px',fontFamily:'Courier New',color:'#ffdd00',stroke:'#000',strokeThickness:2}).setScrollFactor(0).setDepth(100).setOrigin(0.5,0);
+    this.scoreText = this.add.text(W/2,4,`${GameState.score}`,{fontSize:'18px',fontFamily:'Impact, Arial Black',color:'#ffdd00',stroke:'#000',strokeThickness:3}).setScrollFactor(0).setDepth(100).setOrigin(0.5,0);
 
     // Powerup text - above HP bar
     this.powerupText = this.add.text(14, H-hpBarH-28,'',{fontSize:'11px',fontFamily:'Courier New',color:'#ff8800',stroke:'#000',strokeThickness:1}).setScrollFactor(0).setDepth(100);
@@ -782,6 +782,7 @@ class Level0Scene extends BaseLevelScene {
   }
 
   update(time,delta) {
+    if(this.gameOver || this.levelComplete) return;
     this.updatePlayer(delta);
     if(this.enemies) {
       this.enemies.getChildren().forEach(e=>{
