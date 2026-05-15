@@ -245,7 +245,7 @@ class BaseLevelScene extends Phaser.Scene {
     this.player.setBounce(0);
     this.player.body.setGravityY(500);
     this.player.body.setSize(48,50);
-    this.player.body.setOffset(9,8);
+    this.player.body.setOffset(28,43);
     this.player.body.setMaxVelocityY(600);
     this.physics.add.collider(this.player,this.platforms);
     this.cameras.main.setBounds(0,0,this.levelWidth,H);
@@ -365,9 +365,9 @@ class BaseLevelScene extends Phaser.Scene {
     if(wantCrouch&&!this.isCrouching){ this.isCrouching=true; }
     else if(!wantCrouch&&this.isCrouching){ this.isCrouching=false; }
 
-    const PLAYER_IDLE_W=80, PLAYER_IDLE_H=100;
-    const PLAYER_RUN_W=80, PLAYER_RUN_H=100;
-    const PLAYER_JUMP_W=80, PLAYER_JUMP_H=100;
+    const PLAYER_IDLE_W=104, PLAYER_IDLE_H=120;
+    const PLAYER_RUN_W=104, PLAYER_RUN_H=120;
+    const PLAYER_JUMP_W=104, PLAYER_JUMP_H=120;
     const CROUCH_W=90, CROUCH_H=84;
     if(this.isCrouching) {
       p.setVelocityX(0);
