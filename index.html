@@ -241,7 +241,7 @@ class BaseLevelScene extends Phaser.Scene {
     this.platforms = this.physics.add.staticGroup();
 
     // Physics ground - invisible, at H-72
-    const groundBody = this.add.rectangle(this.levelWidth/2, H-72, this.levelWidth+200, 80, 0x000000, 0);
+    const groundBody = this.add.rectangle(this.levelWidth/2, H-90, this.levelWidth+200, 60, 0x000000, 0);
     this.physics.add.existing(groundBody, true);
     this.platforms.add(groundBody);
 
@@ -555,8 +555,16 @@ class BaseLevelScene extends Phaser.Scene {
     const key = this.scene.key;
     const lives = GameState.lives;
     window.setTimeout(() => {
-      if(lives<=0){ GameState.reset(); this.scene.start('StartScreen'); }
-      else { GameState.hp=3; this.scene.start(key); }
+      if(lives<=0){
+        GameState.reset();
+        this.scene.start('StartScreen');
+      } else {
+        GameState.hp=3;
+        // Stop everything then restart scene
+        this.physics.world.isPaused = false;
+        this.scene.stop(key);
+        this.scene.start(key);
+      }
     }, 1600);
   }
 
@@ -741,7 +749,7 @@ class Level0Scene extends BaseLevelScene {
 
     this.exitX = this.levelWidth - 70;
 
-    this.createPlayer(80, 280);
+    this.createPlayer(80, 200);
     this.player.setDepth(10);
     this.createBullets();
     this.createHUD();
@@ -884,7 +892,7 @@ class Level1Scene extends BaseLevelScene {
       }});
     });
 
-    this.createPlayer(60, 280);
+    this.createPlayer(60, 200);
     this.player.setDepth(10);
     this.createBullets();
 
