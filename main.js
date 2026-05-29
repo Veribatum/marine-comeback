@@ -680,7 +680,7 @@ GAME_HEIGHT / 2,
   'titleScreen'
 );
 
-titleScreen.setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
+titleScreen.setDisplaySize(GAME_WIDTH * 0.96, GAME_HEIGHT * 0.96);
 titleScreen.setScrollFactor(0);
 titleScreen.setDepth(6000);
 
