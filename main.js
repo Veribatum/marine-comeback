@@ -31,6 +31,10 @@ let fadeScreen;
 const GAME_WIDTH = 1280;
 const GAME_HEIGHT = 720;
 const WORLD_Y_OFFSET = -60;
+let moveLeft = false;
+let moveRight = false;
+let jumpPressed = false;
+let crouchPressed = false;
 const config = {
 
   type: Phaser.AUTO,
@@ -406,11 +410,11 @@ tv.setScale(1.2);
 // =========================
 apartmentDoor = this.physics.add.sprite(
   1165,
-  320,
+  170,
   'apartmentDoor'
 );
 
-apartmentDoor.setScale(.5);
+apartmentDoor.setScale(1);
 apartmentDoor.setDepth(10);
 apartmentDoor.body.allowGravity = false;
 apartmentDoor.body.immovable = true;
@@ -445,20 +449,20 @@ gameOverScreen.on('pointerdown', () => {
 // =========================
 
 // LEFT CONTROL PLATE
-const leftPlate = this.add.image(170, 700, 'controlPlate')
+const leftPlate = this.add.image(170, 640, 'controlPlate')
   .setScrollFactor(0)
   .setDepth(100)
 .setScale(0.60);
 
 // RIGHT CONTROL PLATE
-const rightPlate = this.add.image(1260, 700, 'controlPlate')
+const rightPlate = this.add.image(1180, 640, 'controlPlate')
   .setScrollFactor(0)
   .setDepth(100)
 .setScale(0.60)
   .setFlipX(true);
 
 // LEFT BUTTON
-this.leftButton = this.add.image(145, 665, 'leftUp')
+this.leftButton = this.add.image(145, 605, 'leftUp')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.50
@@ -466,25 +470,41 @@ this.leftButton = this.add.image(145, 665, 'leftUp')
   .setInteractive();
 
 // RIGHT BUTTON
-this.rightButton = this.add.image(210, 665, 'rightUp')
+this.rightButton = this.add.image(210, 605, 'rightUp')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.50)
   .setInteractive();
 
 // CROUCH BUTTON
-this.crouchButton = this.add.image(175, 725, 'crouchUp')
+this.crouchButton = this.add.image(175, 665, 'crouchUp')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.50)
   .setInteractive();
 
 // FIRE BUTTON
-this.fireButton = this.add.image(1280, 670, 'fireUp')
+this.fireButton = this.add.image(1200, 610, 'fireUp')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.60)
   .setInteractive();
+
+  // LEFT
+this.leftButton.on('pointerdown', () => moveLeft = true);
+this.leftButton.on('pointerup', () => moveLeft = false);
+this.leftButton.on('pointerout', () => moveLeft = false);
+
+// RIGHT
+this.rightButton.on('pointerdown', () => moveRight = true);
+this.rightButton.on('pointerup', () => moveRight = false);
+this.rightButton.on('pointerout', () => moveRight = false);
+
+// CROUCH
+this.crouchButton.on('pointerdown', () => crouchPressed = true);
+this.crouchButton.on('pointerup', () => crouchPressed = false);
+this.crouchButton.on('pointerout', () => crouchPressed = false);
+
 
 // =========================
 // FIRE BUTTON INPUT
@@ -584,11 +604,15 @@ this.time.delayedCall(80, () => {
 });
 
 // JUMP BUTTON
-this.jumpButton = this.add.image(1220, 720, 'jumpUp')
+this.jumpButton = this.add.image(1140, 670, 'jumpUp')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.65)
   .setInteractive();
+  // JUMP
+this.jumpButton.on('pointerdown', () => jumpPressed = true);
+this.jumpButton.on('pointerup', () => jumpPressed = false);
+this.jumpButton.on('pointerout', () => jumpPressed = false);
 
 // HEALTH BAR
 healthBar = this.add.image(240, 70, 'health3')
@@ -678,7 +702,7 @@ if (playerIsDead) {
   // =========================
   // MOVE LEFT
   // =========================
-  if (cursors.left.isDown) {
+if (cursors.left.isDown || moveLeft) {
 
     player.body.setVelocityX(-300);
     player.setFlipX(true);
@@ -688,7 +712,7 @@ if (playerIsDead) {
   // =========================
   // MOVE RIGHT
   // =========================
-  else if (cursors.right.isDown) {
+else if (cursors.right.isDown || moveRight){
 
     player.body.setVelocityX(300);
     player.setFlipX(false);
@@ -712,7 +736,7 @@ let iscrouching =cursors.down.isdown && player.body.blocked.down;
   // =========================
   // JUMP
   // =========================
-  if (cursors.up.isDown && player.body.blocked.down) {
+if ((cursors.up.isDown || jumpPressed) && player.body.blocked.down){
 
     player.body.setVelocityY(-600);
 
@@ -721,7 +745,9 @@ let iscrouching =cursors.down.isdown && player.body.blocked.down;
 // =========================
 // CROUCH CHECK
 // =========================
-let isCrouching = cursors.down.isDown && player.body.blocked.down;
+let isCrouching =
+  (cursors.down.isDown || crouchPressed) &&
+  player.body.blocked.down;
 
 if (isCrouching) {
   player.body.setVelocityX(0);
@@ -974,6 +1000,7 @@ if (slime && slime.active && slime.body && !slime.isDead) {
   }
 
 }
+
 }
 // =========================
 // HIT SLIME FUNCTION
