@@ -202,7 +202,7 @@ background.setScrollFactor(0);
   // =========================
   // GROUND
   // =========================
-const ground = this.add.tileSprite(GAME_WIDTH / 2, 580, GAME_WIDTH, 128, 'apartmentFloor');
+const ground = this.add.tileSprite(GAME_WIDTH / 2, 480, GAME_WIDTH, 128, 'apartmentFloor');
 ground.tilePositionY = 520;
 
   this.physics.add.existing(ground, true);
@@ -216,7 +216,7 @@ ground.body.setOffset(0, 70);
 // =========================
 // APARTMENT PROP: COUCH
 // =========================
-const couch = this.add.image(430, 470, 'couch');
+const couch = this.add.image(430, 370, 'couch');
 
 couch.setDepth(5);
 couch.setScale(1);
@@ -224,7 +224,7 @@ couch.setScale(1);
 // =========================
 // PIZZA BOX
 // =========================
-const pizza = this.add.image(900, 550, 'pizza');
+const pizza = this.add.image(900, 450, 'pizza');
 
 pizza.setDepth(5);
 pizza.setScale(0.8);
@@ -232,7 +232,7 @@ pizza.setScale(0.8);
 // =========================
 // COKE
 // =========================
-const coke = this.add.image(980, 530, 'apartment_soda');
+const coke = this.add.image(980, 430, 'apartment_soda');
 
 coke.setDepth(5);
 coke.setScale(0.7);
@@ -242,7 +242,7 @@ coke.setScale(0.7);
   // PLAYER
   // =========================
 
-  player = this.physics.add.sprite(150, 300, 'playerIdle');
+  player = this.physics.add.sprite(150, 200, 'playerIdle');
 
   player.body.setCollideWorldBounds(true);
 
@@ -304,7 +304,7 @@ this.anims.create({
   // =========================
 // SLIME ENEMY
 // =========================
-slime = this.physics.add.sprite(900, 500, 'slimeWalk1');
+slime = this.physics.add.sprite(900, 400, 'slimeWalk1');
 
 slime.setScale(1);
 slime.setDepth(15);
@@ -396,7 +396,7 @@ player.play('idle');
 // =========================
 // FOREGROUND TV
 // =========================
-const tv = this.add.image(650, 560, 'tv');
+const tv = this.add.image(650, 460, 'tv');
 
 tv.setDepth(50);
 tv.setScale(1.2);
@@ -406,7 +406,7 @@ tv.setScale(1.2);
 // =========================
 apartmentDoor = this.physics.add.sprite(
   1165,
-  420,
+  320,
   'apartmentDoor'
 );
 
