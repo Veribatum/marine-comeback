@@ -186,15 +186,17 @@ function create() {
  // =========================
 // APARTMENT BACKGROUND
 // =========================
-const background = this.add.image(720, 360, 'apartmentBackground');
+const background = this.add.image(
+  GAME_WIDTH / 2,
+  GAME_HEIGHT / 2,
+  'apartmentBackground'
+);
 
 background.setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
 
 background.setScrollFactor(0);
 
-background.setScrollFactor(0.5);
-background.tileScaleX = 0.25;
-background.tileScaleY = 0.25;
+
 
   // =========================
   // GROUND
@@ -326,9 +328,9 @@ this.physics.add.collider(casings, ground);
 // =========================
 // WORLD SIZE
 // =========================
-this.physics.world.setBounds(0, 0, window.innerWidth, window.innerHeight);
+this.physics.world.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
 
-this.cameras.main.setBounds(0, 0, window.innerWidth, window.innerHeight);
+this.cameras.main.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT);
   
 // =========================
 // CAMERA FOLLOW
@@ -602,11 +604,11 @@ livesDisplay = this.add.image(1080, 70, 'lives3')
  // =========================
 // Level Transition Fade Screen
 // =========================
-  fadeScreen = this.add.rectangle(
-GAME_WIDTH / 2,
-GAME_HEIGHT / 2,
-  window.innerWidth,
-  window.innerHeight,
+fadeScreen = this.add.rectangle(
+  GAME_WIDTH / 2,
+  GAME_HEIGHT / 2,
+  GAME_WIDTH,
+  GAME_HEIGHT,
   0x000000
 );
 
