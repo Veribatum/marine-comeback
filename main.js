@@ -449,20 +449,20 @@ gameOverScreen.on('pointerdown', () => {
 // =========================
 
 // LEFT CONTROL PLATE
-const leftPlate = this.add.image(170, 640, 'controlPlate')
+const leftPlate = this.add.image(170, 610, 'controlPlate')
   .setScrollFactor(0)
   .setDepth(100)
 .setScale(0.60);
 
 // RIGHT CONTROL PLATE
-const rightPlate = this.add.image(1180, 640, 'controlPlate')
+const rightPlate = this.add.image(1120, 610, 'controlPlate')
   .setScrollFactor(0)
   .setDepth(100)
 .setScale(0.60)
   .setFlipX(true);
 
 // LEFT BUTTON
-this.leftButton = this.add.image(145, 605, 'leftUp')
+this.leftButton = this.add.image(145, 575, 'leftUp')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.50
@@ -470,21 +470,21 @@ this.leftButton = this.add.image(145, 605, 'leftUp')
   .setInteractive();
 
 // RIGHT BUTTON
-this.rightButton = this.add.image(210, 605, 'rightUp')
+this.rightButton = this.add.image(210, 575, 'rightUp')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.50)
   .setInteractive();
 
 // CROUCH BUTTON
-this.crouchButton = this.add.image(175, 665, 'crouchUp')
+this.crouchButton = this.add.image(175, 635, 'crouchUp')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.50)
   .setInteractive();
 
 // FIRE BUTTON
-this.fireButton = this.add.image(1200, 610, 'fireUp')
+this.fireButton = this.add.image(1140, 580, 'fireUp')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.60)
@@ -511,12 +511,47 @@ this.crouchButton.on('pointerout', () => crouchPressed = false);
 // =========================
 this.fireButton.on('pointerdown', () => {
 
-  let bullet = bullets.create(
-    player.x + 55,
-    player.y - 40,
-    'bullet'
-  );
-  bullet.body.allowGravity = false;
+    // FIRE BUTTON BULLET
+let bulletX;
+let bulletY = player.y - 40;
+
+if (!player.flipX) {
+  bulletX = player.x + 65;
+} else {
+  bulletX = player.x - 65;
+}
+
+let bullet = bullets.create(
+  bulletX,
+  bulletY,
+  'bullet'
+);
+
+bullet.setDepth(40);
+bullet.body.allowGravity = false;
+
+if (!player.flipX) {
+  bullet.setVelocityX(800);
+} else {
+  bullet.setVelocityX(-800);
+  bullet.setFlipX(true);
+}
+
+let muzzleFlash = this.add.image(
+  bulletX,
+  bulletY,
+  'muzzleFlash'
+);
+
+muzzleFlash.setDepth(2000);
+
+if (player.flipX) {
+  muzzleFlash.setFlipX(true);
+}
+
+this.time.delayedCall(80, () => {
+  muzzleFlash.destroy();
+});
 
   // =========================
 // SHELL CASING
@@ -526,7 +561,7 @@ let casing = casings.create(
   player.y - 50,
   'casing'
 );
-
+casing.setDepth(40);
 casing.setScale(1.5);
 casing.body.setSize(casing.width, casing.height);
 casing.body.setOffset(0, 0);
@@ -573,26 +608,7 @@ this.time.delayedCall(8000, () => {
   // =========================
 // MUZZLE FLASH
 // =========================
-let flashX;
 
-flashX = bulletX;
-
-let muzzleFlash = this.add.image(
-  flashX,
- bulletY,
-  'muzzleFlash'
-);
-
-muzzleFlash.setScale(1);
-muzzleFlash.setDepth(2000);
-
-if (player.flipX) {
-  muzzleFlash.setFlipX(true);
-}
-
-this.time.delayedCall(80, () => {
-  muzzleFlash.destroy();
-});
 
   if (!player.flipX) {
     bullet.setVelocityX(800);
@@ -604,7 +620,7 @@ this.time.delayedCall(80, () => {
 });
 
 // JUMP BUTTON
-this.jumpButton = this.add.image(1140, 670, 'jumpUp')
+this.jumpButton = this.add.image(1080, 625, 'jumpUp')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.65)
@@ -800,7 +816,7 @@ else if (!player.body.blocked.down) {
 
 }
 
-else if (cursors.left.isDown || cursors.right.isDown) {
+else if (cursors.left.isDown || cursors.right.isDown || moveLeft || moveRight) {
 
   player.play('run', true);
 
@@ -880,15 +896,15 @@ else {
   }
 
 }
-
 let bullet = bullets.create(
   bulletX,
   bulletY,
   'bullet'
 );
-bullet.setDepth(40);
 
+bullet.setDepth(40);
 bullet.body.allowGravity = false;
+
 
 // =========================
 // SHELL CASING
@@ -898,6 +914,7 @@ let casing = casings.create(
   player.y - 70,
   'casing'
 );
+casing.setDepth(40);
 
 casing.setScale(1.5);
 casing.body.setSize(casing.width, casing.height);
