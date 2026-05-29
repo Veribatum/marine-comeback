@@ -36,6 +36,9 @@ let moveRight = false;
 let jumpPressed = false;
 let crouchPressed = false;
 let playerIsCrouching = false;
+const IS_STANDALONE =
+  window.matchMedia('(display-mode: standalone)').matches ||
+  window.navigator.standalone;
 const config = {
 
   type: Phaser.AUTO,
@@ -43,10 +46,10 @@ const config = {
   width: 1280,
   height: 720,
 
-  scale: {
-  mode: Phaser.Scale.ENVELOP,
-    autoCenter: Phaser.Scale.CENTER_BOTH
-  },
+scale: {
+  mode: IS_STANDALONE ? Phaser.Scale.ENVELOP : Phaser.Scale.FIT,
+  autoCenter: Phaser.Scale.CENTER_BOTH
+},
 
   backgroundColor: '#000000',
 
