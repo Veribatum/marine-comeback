@@ -43,11 +43,15 @@ const config = {
   height: 720,
 
   scale: {
-    mode: Phaser.Scale.FIT,
+  mode: Phaser.Scale.ENVELOP,
     autoCenter: Phaser.Scale.CENTER_BOTH
   },
 
   backgroundColor: '#000000',
+
+  input: {
+  activePointers: 3
+},
 
   physics: {
     default: 'arcade',
@@ -629,6 +633,8 @@ this.jumpButton = this.add.image(1080, 625, 'jumpUp')
 this.jumpButton.on('pointerdown', () => jumpPressed = true);
 this.jumpButton.on('pointerup', () => jumpPressed = false);
 this.jumpButton.on('pointerout', () => jumpPressed = false);
+
+this.input.addPointer(4);
 
 // HEALTH BAR
 healthBar = this.add.image(240, 70, 'health3')
