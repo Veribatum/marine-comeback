@@ -454,20 +454,20 @@ gameOverScreen.on('pointerdown', () => {
 // =========================
 
 // LEFT CONTROL PLATE
-const leftPlate = this.add.image(170, 610, 'controlPlate')
+const leftPlate = this.add.image(170, 590, 'controlPlate')
   .setScrollFactor(0)
   .setDepth(100)
 .setScale(0.60);
 
 // RIGHT CONTROL PLATE
-const rightPlate = this.add.image(1120, 610, 'controlPlate')
+const rightPlate = this.add.image(1120, 590, 'controlPlate')
   .setScrollFactor(0)
   .setDepth(100)
 .setScale(0.60)
   .setFlipX(true);
 
 // LEFT BUTTON
-this.leftButton = this.add.image(145, 575, 'leftUp')
+this.leftButton = this.add.image(145, 555, 'leftUp')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.50
@@ -475,21 +475,21 @@ this.leftButton = this.add.image(145, 575, 'leftUp')
   .setInteractive();
 
 // RIGHT BUTTON
-this.rightButton = this.add.image(210, 575, 'rightUp')
+this.rightButton = this.add.image(210, 555, 'rightUp')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.50)
   .setInteractive();
 
 // CROUCH BUTTON
-this.crouchButton = this.add.image(175, 635, 'crouchUp')
+this.crouchButton = this.add.image(175, 615, 'crouchUp')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.50)
   .setInteractive();
 
 // FIRE BUTTON
-this.fireButton = this.add.image(1140, 580, 'fireUp')
+this.fireButton = this.add.image(1140, 560, 'fireUp')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.60)
@@ -555,7 +555,7 @@ let muzzleFlash = this.add.image(
   'muzzleFlash'
 );
 
-muzzleFlash.setDepth(2000);
+muzzleFlash.setDepth(40);
 
 if (player.flipX) {
   muzzleFlash.setFlipX(true);
@@ -632,7 +632,7 @@ this.time.delayedCall(8000, () => {
 });
 
 // JUMP BUTTON
-this.jumpButton = this.add.image(1080, 625, 'jumpUp')
+this.jumpButton = this.add.image(1080, 605, 'jumpUp')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.65)
@@ -964,7 +964,7 @@ let muzzleFlash = this.add.image(
 );
 
 muzzleFlash.setScale(1);
-muzzleFlash.setDepth(2000);
+muzzleFlash.setDepth(40);
 
 if (player.flipX) {
   muzzleFlash.setFlipX(true);
