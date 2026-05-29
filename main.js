@@ -28,6 +28,8 @@ let gameStarted = false;
 let apartmentDoor;
 let levelTransitioning = false;
 let fadeScreen;
+const GAME_WIDTH = 1280;
+const GAME_HEIGHT = 720;
 const config = {
 
   type: Phaser.AUTO,
@@ -186,7 +188,7 @@ function create() {
 // =========================
 const background = this.add.image(720, 360, 'apartmentBackground');
 
-background.setDisplaySize(window.innerWidth, window.innerHeight);
+background.setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
 
 background.setScrollFactor(0);
 
@@ -197,7 +199,7 @@ background.tileScaleY = 0.25;
   // =========================
   // GROUND
   // =========================
-const ground = this.add.tileSprite(window.innerWidth / 2, 580, window.innerWidth, 128, 'apartmentFloor');
+const ground = this.add.tileSprite(GAME_WIDTH / 2, 580, GAME_WIDTH, 128, 'apartmentFloor');
 ground.tilePositionY = 520;
 
   this.physics.add.existing(ground, true);
@@ -416,8 +418,8 @@ this.physics.add.overlap(player, apartmentDoor, enterDoor, null, this);
 // GAME OVER SCREEN
 // =========================
 gameOverScreen = this.add.image(
-  window.innerWidth / 2,
-  window.innerHeight / 2,
+GAME_WIDTH / 2,
+GAME_HEIGHT / 2,
   'gameOverScreen'
 );
 
@@ -601,8 +603,8 @@ livesDisplay = this.add.image(1080, 70, 'lives3')
 // Level Transition Fade Screen
 // =========================
   fadeScreen = this.add.rectangle(
-  window.innerWidth / 2,
-  window.innerHeight / 2,
+GAME_WIDTH / 2,
+GAME_HEIGHT / 2,
   window.innerWidth,
   window.innerHeight,
   0x000000
@@ -616,12 +618,12 @@ fadeScreen.setAlpha(0);
 // TITLE SCREEN
 // =========================
 titleScreen = this.add.image(
-  window.innerWidth / 2,
-  window.innerHeight / 2,
+GAME_WIDTH / 2,
+GAME_HEIGHT / 2,
   'titleScreen'
 );
 
-titleScreen.setDisplaySize(window.innerWidth, window.innerHeight);
+titleScreen.setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
 titleScreen.setScrollFactor(0);
 titleScreen.setDepth(6000);
 
