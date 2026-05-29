@@ -35,6 +35,7 @@ let moveLeft = false;
 let moveRight = false;
 let jumpPressed = false;
 let crouchPressed = false;
+let playerIsCrouching = false;
 const config = {
 
   type: Phaser.AUTO,
@@ -494,6 +495,8 @@ this.fireButton = this.add.image(1140, 580, 'fireUp')
   .setScale(0.60)
   .setInteractive();
 
+  // TOUCH CONTROLS
+
   // LEFT
 this.leftButton.on('pointerdown', () => moveLeft = true);
 this.leftButton.on('pointerup', () => moveLeft = false);
@@ -509,15 +512,20 @@ this.crouchButton.on('pointerdown', () => crouchPressed = true);
 this.crouchButton.on('pointerup', () => crouchPressed = false);
 this.crouchButton.on('pointerout', () => crouchPressed = false);
 
-
 // =========================
 // FIRE BUTTON INPUT
 // =========================
 this.fireButton.on('pointerdown', () => {
 
-    // FIRE BUTTON BULLET
+// FIRE BUTTON BULLET
 let bulletX;
-let bulletY = player.y - 40;
+let bulletY;
+
+if (playerIsCrouching) {
+  bulletY = player.y - 20;
+} else {
+  bulletY = player.y - 40;
+}
 
 if (!player.flipX) {
   bulletX = player.x + 65;
@@ -637,13 +645,13 @@ this.jumpButton.on('pointerout', () => jumpPressed = false);
 this.input.addPointer(4);
 
 // HEALTH BAR
-healthBar = this.add.image(240, 70, 'health3')
+healthBar = this.add.image(240, 95, 'health3')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.75);
 
 // LIVES
-livesDisplay = this.add.image(1080, 70, 'lives3')
+livesDisplay = this.add.image(1080, 95, 'lives3')
   .setScrollFactor(0)
   .setDepth(101)
   .setScale(0.75);
@@ -751,11 +759,6 @@ else if (cursors.right.isDown || moveRight){
   }
 
   // =========================
-// CROUCH STATE
-// =========================
-let iscrouching =cursors.down.isdown && player.body.blocked.down; 
-
-  // =========================
   // JUMP
   // =========================
 if ((cursors.up.isDown || jumpPressed) && player.body.blocked.down){
@@ -767,9 +770,11 @@ if ((cursors.up.isDown || jumpPressed) && player.body.blocked.down){
 // =========================
 // CROUCH CHECK
 // =========================
-let isCrouching =
+playerIsCrouching =
   (cursors.down.isDown || crouchPressed) &&
   player.body.blocked.down;
+
+let isCrouching = playerIsCrouching;
 
 if (isCrouching) {
   player.body.setVelocityX(0);
