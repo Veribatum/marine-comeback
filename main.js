@@ -30,12 +30,14 @@ let levelTransitioning = false;
 let fadeScreen;
 const GAME_WIDTH = 1280;
 const GAME_HEIGHT = 720;
+const LEVEL1_WIDTH = GAME_WIDTH * 3;
 const WORLD_Y_OFFSET = -60;
 let moveLeft = false;
 let moveRight = false;
 let jumpPressed = false;
 let crouchPressed = false;
 let playerIsCrouching = false;
+let currentLevel = 'apartment';
 const IS_STANDALONE =
   window.matchMedia('(display-mode: standalone)').matches ||
   window.navigator.standalone;
@@ -66,11 +68,19 @@ scale: {
     }
   },
 
-  scene: {
+  scene: [
+  {
+    key: 'ApartmentScene',
     preload: preload,
     create: create,
     update: update
+  },
+  {
+    key: 'Level1Scene',
+    create: createLevel1,
+    update: updateLevel1
   }
+]
 };
 
 // =========================
@@ -187,6 +197,26 @@ this.load.image('gameOverScreen', 'assets/Gameover.png');
 // =========================
 this.load.image('titleScreen', 'assets/Title.png');
 
+// =========================
+// STREET GROUND
+// =========================
+
+this.load.image('streetGround', 'assets/street_ground.png');
+
+// =========================
+// CITY SKY
+// =========================
+
+this.load.image('citySky', 'assets/city_sky.png');
+
+// =========================
+// CITY buildings
+// =========================
+
+this.load.image('cityBuilding01', 'assets/city_building_01.png');
+this.load.image('cityBuilding02', 'assets/city_building_02.png');
+this.load.image('cityBuilding03', 'assets/city_building_03.png');
+
 }
 
 
@@ -279,6 +309,7 @@ player.setDepth(20);
 // =========================
 player.body.setSize(360, 520);
 player.body.setOffset(240, 500);
+
 
 // =========================
 // KEYBOARD INPUT
@@ -718,6 +749,9 @@ if (!gameStarted) {
 
   return;
 }
+if (currentLevel === 'level1') {
+  return;
+}
 
 // =========================
 // RESTART GAME
@@ -928,6 +962,7 @@ let casing = casings.create(
   player.y - 70,
   'casing'
 );
+casing.body.allowGravity = true;
 casing.setDepth(40);
 
 casing.setScale(1.5);
@@ -1205,9 +1240,711 @@ function enterDoor(playerObject, doorObject) {
     targets: fadeScreen,
     alpha: 1,
     duration: 800,
-    onComplete: () => {
-      console.log("LOAD LEVEL 1");
+   onComplete: () => {
+  playerObject.scene.scene.start('Level1Scene');
+}
+  });
+
+}
+
+// =========================
+// LEVEL 1 CREATE
+// =========================
+function createLevel1() {
+
+this.cameras.main.setBackgroundColor('#000000');
+// city Sky
+const sky = this.add.tileSprite(
+  0,
+  0,
+  LEVEL1_WIDTH,
+  GAME_HEIGHT,
+  'citySky'
+);
+
+sky.setOrigin(0, 0);
+sky.setDepth(-200);
+sky.setScrollFactor(0.2);
+sky.tilePositionY = -450;
+
+// City Buildings
+// City Buildings
+const building01 = this.add.image(250, 100, 'cityBuilding01');
+building01.setScale(0.65);
+building01.setDepth(-50);
+building01.setScrollFactor(0.6);
+
+const building02 = this.add.image(950, 70, 'cityBuilding02');
+building02.setScale(0.65);
+building02.setDepth(-50);
+building02.setScrollFactor(0.6);
+
+const building03 = this.add.image(1650, 70, 'cityBuilding03');
+building03.setScale(0.65);
+building03.setDepth(-50);
+building03.setScrollFactor(0.6);
+
+const building04 = this.add.image(2350, 100, 'cityBuilding01');
+building04.setScale(0.65);
+building04.setDepth(-50);
+building04.setScrollFactor(0.6);
+
+const building05 = this.add.image(3050, 70, 'cityBuilding02');
+building05.setScale(0.65);
+building05.setDepth(-50);
+building05.setScrollFactor(0.6);
+
+// Street Ground
+const streetY = 520;
+const streetSpacing = 1400;
+
+
+
+for (let i = 0; i < 4; i++) {
+
+  let streetGround = this.add.image(
+    700 + (i * streetSpacing),
+    streetY,
+    'streetGround'
+  );
+
+  streetGround.setDepth(0);
+
+}
+
+const level1Floor = this.add.rectangle(
+  LEVEL1_WIDTH / 2,
+  500,
+  LEVEL1_WIDTH,
+  40,
+  0xff0000
+);
+level1Floor.setVisible(false);
+
+this.physics.add.existing(level1Floor, true);
+
+player = this.physics.add.sprite(150, 250, 'playerIdle');
+player.setScale(0.15);
+player.setDepth(20);
+player.body.setCollideWorldBounds(true);
+player.body.setSize(360, 520);
+player.body.setOffset(240, 500);
+
+// =========================
+// LEVEL 1 INPUT / GROUPS
+// =========================
+bullets = this.physics.add.group();
+casings = this.physics.add.group();
+
+cursors = this.input.keyboard.createCursorKeys();
+
+fireKey = this.input.keyboard.addKey(
+  Phaser.Input.Keyboard.KeyCodes.SPACE
+);
+
+restartKey = this.input.keyboard.addKey(
+  Phaser.Input.Keyboard.KeyCodes.R
+);
+
+this.physics.world.setBounds(0, 0, LEVEL1_WIDTH, GAME_HEIGHT);
+this.cameras.main.setBounds(0, 0, LEVEL1_WIDTH, GAME_HEIGHT);
+
+this.cameras.main.startFollow(player);
+bullets = this.physics.add.group();
+casings = this.physics.add.group();
+
+this.physics.add.collider(player, level1Floor);
+this.physics.add.collider(casings, level1Floor);
+
+cursors = this.input.keyboard.createCursorKeys();
+
+fireKey = this.input.keyboard.addKey(
+  Phaser.Input.Keyboard.KeyCodes.SPACE
+);
+// =========================
+
+// HUD / CONTROLS
+
+// =========================
+
+
+
+// LEFT CONTROL PLATE
+
+const leftPlate = this.add.image(170, 590, 'controlPlate')
+
+  .setScrollFactor(0)
+
+  .setDepth(100)
+
+.setScale(0.60);
+
+
+
+// RIGHT CONTROL PLATE
+
+const rightPlate = this.add.image(1120, 590, 'controlPlate')
+
+  .setScrollFactor(0)
+
+  .setDepth(100)
+
+.setScale(0.60)
+
+  .setFlipX(true);
+
+
+
+// LEFT BUTTON
+
+this.leftButton = this.add.image(145, 555, 'leftUp')
+
+  .setScrollFactor(0)
+
+  .setDepth(101)
+
+  .setScale(0.50
+
+  )
+
+  .setInteractive();
+
+
+
+// RIGHT BUTTON
+
+this.rightButton = this.add.image(210, 555, 'rightUp')
+
+  .setScrollFactor(0)
+
+  .setDepth(101)
+
+  .setScale(0.50)
+
+  .setInteractive();
+
+
+
+// CROUCH BUTTON
+
+this.crouchButton = this.add.image(175, 615, 'crouchUp')
+
+  .setScrollFactor(0)
+
+  .setDepth(101)
+
+  .setScale(0.50)
+
+  .setInteractive();
+
+
+
+// FIRE BUTTON
+
+this.fireButton = this.add.image(1140, 560, 'fireUp')
+
+  .setScrollFactor(0)
+
+  .setDepth(101)
+
+  .setScale(0.60)
+
+  .setInteractive();
+
+
+
+  // TOUCH CONTROLS
+
+
+
+  // LEFT
+
+this.leftButton.on('pointerdown', () => moveLeft = true);
+
+this.leftButton.on('pointerup', () => moveLeft = false);
+
+this.leftButton.on('pointerout', () => moveLeft = false);
+
+
+
+// RIGHT
+
+this.rightButton.on('pointerdown', () => moveRight = true);
+
+this.rightButton.on('pointerup', () => moveRight = false);
+
+this.rightButton.on('pointerout', () => moveRight = false);
+
+
+
+// CROUCH
+
+this.crouchButton.on('pointerdown', () => crouchPressed = true);
+
+this.crouchButton.on('pointerup', () => crouchPressed = false);
+
+this.crouchButton.on('pointerout', () => crouchPressed = false);
+
+
+
+// =========================
+
+// FIRE BUTTON INPUT
+
+// =========================
+
+this.fireButton.on('pointerdown', () => {
+
+
+
+// FIRE BUTTON BULLET
+
+let bulletX;
+
+let bulletY;
+
+
+
+if (playerIsCrouching) {
+
+  bulletY = player.y - 20;
+
+} else {
+
+  bulletY = player.y - 40;
+
+}
+
+
+
+if (!player.flipX) {
+
+  bulletX = player.x + 65;
+
+} else {
+
+  bulletX = player.x - 65;
+
+}
+
+
+
+let bullet = bullets.create(
+
+  bulletX,
+
+  bulletY,
+
+  'bullet'
+
+);
+
+
+
+bullet.setDepth(40);
+
+bullet.body.allowGravity = false;
+
+
+
+if (!player.flipX) {
+
+  bullet.setVelocityX(800);
+
+} else {
+
+  bullet.setVelocityX(-800);
+
+  bullet.setFlipX(true);
+
+}
+
+
+
+let muzzleFlash = this.add.image(
+
+  bulletX,
+
+  bulletY,
+
+  'muzzleFlash'
+
+);
+
+
+
+muzzleFlash.setDepth(40);
+
+
+
+if (player.flipX) {
+
+  muzzleFlash.setFlipX(true);
+
+}
+
+
+
+this.time.delayedCall(80, () => {
+
+  muzzleFlash.destroy();
+
+});
+
+
+
+  // =========================
+
+// SHELL CASING
+
+// =========================
+
+let casing = casings.create(
+
+  player.x,
+
+  player.y - 50,
+
+  'casing'
+
+);
+
+casing.setDepth(40);
+
+casing.setScale(1.5);
+
+casing.body.setSize(casing.width, casing.height);
+
+casing.body.setOffset(0, 0);
+
+
+
+casing.setBounce(0.20);
+
+casing.setDragX(900);
+
+casing.setAngularVelocity(Phaser.Math.Between(-250, 250));
+
+
+
+// RIGHT-FACING EJECTION
+
+if (!player.flipX) {
+
+
+
+  casing.setVelocity(
+
+    -120,
+
+    -220
+
+  );
+
+
+
+  casing.setAngularVelocity(-400);
+
+
+
+}
+
+
+
+// LEFT-FACING EJECTION
+
+else {
+
+
+
+  casing.setVelocity(
+
+    120,
+
+    -220
+
+  );
+
+
+
+  casing.setFlipX(true);
+
+
+
+  casing.setAngularVelocity(400);
+
+
+
+}
+
+
+
+// REMOVE CASING LATER
+
+this.time.delayedCall(8000, () => {
+
+
+
+  if (casing.active) {
+
+    casing.destroy();
+
+  }
+
+
+
+});
+
+
+
+  // =========================
+
+// MUZZLE FLASH
+
+// =========================
+
+
+
+
+
+  if (!player.flipX) {
+
+    bullet.setVelocityX(800);
+
+  } else {
+
+    bullet.setVelocityX(-800);
+
+    bullet.setFlipX(true);
+
+  }
+
+
+
+});
+
+
+
+// JUMP BUTTON
+
+this.jumpButton = this.add.image(1080, 605, 'jumpUp')
+
+  .setScrollFactor(0)
+
+  .setDepth(101)
+
+  .setScale(0.65)
+
+  .setInteractive();
+
+  // JUMP
+
+this.jumpButton.on('pointerdown', () => jumpPressed = true);
+
+this.jumpButton.on('pointerup', () => jumpPressed = false);
+
+this.jumpButton.on('pointerout', () => jumpPressed = false);
+
+
+
+this.input.addPointer(4);
+
+
+
+// HEALTH BAR
+
+healthBar = this.add.image(240, 95, 'health3')
+
+  .setScrollFactor(0)
+
+  .setDepth(101)
+
+  .setScale(0.75);
+
+
+
+// LIVES
+
+livesDisplay = this.add.image(1080, 95, 'lives3')
+
+  .setScrollFactor(0)
+
+  .setDepth(101)
+
+  .setScale(0.75);
+
+}
+
+// =========================
+// LEVEL 1 UPDATE
+// =========================
+function updateLevel1() {
+
+  if (playerIsDead) {
+    player.body.setVelocityX(0);
+    player.setTexture('playerDead');
+    return;
+  }
+
+  if (cursors.left.isDown || moveLeft) {
+    player.body.setVelocityX(-300);
+    player.setFlipX(true);
+  }
+
+  else if (cursors.right.isDown || moveRight) {
+    player.body.setVelocityX(300);
+    player.setFlipX(false);
+  }
+
+  else {
+    player.body.setVelocityX(0);
+  }
+
+  if ((cursors.up.isDown || jumpPressed) && player.body.blocked.down) {
+    player.body.setVelocityY(-600);
+  }
+
+  playerIsCrouching =
+    (cursors.down.isDown || crouchPressed) &&
+    player.body.blocked.down;
+
+  if (playerIsCrouching) {
+    player.body.setVelocityX(0);
+    player.setTexture('playerCrouch');
+  }
+
+else if (!player.body.blocked.down) {
+
+  if (player.body.velocity.y < -100) {
+    player.setTexture('playerJump1');
+  }
+
+  else if (player.body.velocity.y >= -100 && player.body.velocity.y <= 100) {
+    player.setTexture('playerJump2');
+  }
+
+  else {
+    player.setTexture('playerJump3');
+  }
+
+}
+
+  else if (cursors.left.isDown || cursors.right.isDown || moveLeft || moveRight) {
+    player.play('run', true);
+  }
+
+  else {
+    player.play('idle', true);
+  }
+  // =========================
+// FIRE PLAYER BULLET
+// =========================
+function firePlayerBullet(scene) {
+
+  let bulletX;
+  let bulletY;
+
+  if (playerIsCrouching) {
+    bulletY = player.y - 20;
+  } else if (!player.body.blocked.down) {
+    bulletY = player.y - 55;
+  } else {
+    bulletY = player.y - 40;
+  }
+
+  if (!player.flipX) {
+    bulletX = player.x + 65;
+  } else {
+    bulletX = player.x - 65;
+  }
+
+  let bullet = bullets.create(
+    bulletX,
+    bulletY,
+    'bullet'
+  );
+
+  bullet.setDepth(40);
+  bullet.body.allowGravity = false;
+
+  if (!player.flipX) {
+    bullet.setVelocityX(800);
+  } else {
+    bullet.setVelocityX(-800);
+    bullet.setFlipX(true);
+  }
+
+  let muzzleFlash = scene.add.image(
+    bulletX,
+    bulletY,
+    'muzzleFlash'
+  );
+
+  muzzleFlash.setDepth(40);
+
+  if (player.flipX) {
+    muzzleFlash.setFlipX(true);
+  }
+
+  scene.time.delayedCall(40, () => {
+    muzzleFlash.destroy();
+  });
+
+  let casing = casings.create(
+    player.x,
+    player.y - 70,
+    'casing'
+  );
+
+  casing.setDepth(40);
+  casing.setScale(1.5);
+  casing.body.setSize(casing.width, casing.height);
+  casing.body.setOffset(0, 0);
+
+  casing.setBounce(0.35);
+  casing.setDragX(500);
+  casing.setAngularVelocity(Phaser.Math.Between(-600, 600));
+
+  if (!player.flipX) {
+    casing.setVelocity(-120, -220);
+    casing.setAngularVelocity(-400);
+  } else {
+    casing.setVelocity(120, -220);
+    casing.setFlipX(true);
+    casing.setAngularVelocity(400);
+  }
+
+  scene.time.delayedCall(8000, () => {
+    if (casing.active) {
+      casing.destroy();
     }
   });
 
+}
+  // =========================
+// casing stop spinning on ground
+// =========================
+casings.children.iterate((casing) => {
+
+  if (!casing || !casing.body) {
+    return;
+  }
+
+  if (casing.body.blocked.down && !casing.hasLanded) {
+
+    casing.hasLanded = true;
+    casing.setAngularVelocity(0);
+    casing.setVelocityX(0);
+
+    casing.rotation = Phaser.Math.DegToRad(
+      Phaser.Math.Between(-15, 15)
+    );
+
+  }
+
+});
+if (Phaser.Input.Keyboard.JustDown(fireKey) && !playerIsDead) {
+  firePlayerBullet(this);
+}
+  
 }
