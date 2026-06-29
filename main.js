@@ -189,6 +189,11 @@ const config = {
       key: 'Level1Scene',
       create: createLevel1,
       update: updateLevel1
+    },
+    {
+      key: 'SewerScene',
+      create: createSewerScene,
+      update: updateSewerScene
     }
   ]
 };
@@ -451,6 +456,33 @@ function createPlayer(scene, x, y) {
   p.play('idle');
 
   return p;
+}
+
+
+// =========================
+// SHARED: CREATE FADE SCREEN
+// =========================
+// Phaser destroys a scene's entire display list when that scene shuts
+// down via scene.start() - fadeScreen was only ever created once, in
+// the Apartment scene's create(), so once Apartment shuts down that
+// rectangle is gone and the global fadeScreen variable points at a
+// destroyed object. Every transition after that (Level1 -> Sewer, and
+// onward) was tweening a dead target: the tween's timer/onComplete
+// still ran on schedule, which is why the scene change itself worked,
+// but nothing visibly faded since there was nothing left to fade.
+// Each scene now creates its own fadeScreen the same way the apartment
+// scene originally did.
+function createFadeScreen(scene) {
+  fadeScreen = scene.add.rectangle(
+    GAME_WIDTH / 2,
+    GAME_HEIGHT / 2,
+    GAME_WIDTH,
+    GAME_HEIGHT,
+    0x000000
+  );
+  fadeScreen.setScrollFactor(0);
+  fadeScreen.setDepth(7000);
+  fadeScreen.setAlpha(0);
 }
 
 
@@ -1821,16 +1853,7 @@ function create() {
   // =========================
   // LEVEL TRANSITION FADE SCREEN
   // =========================
-  fadeScreen = this.add.rectangle(
-    GAME_WIDTH / 2,
-    GAME_HEIGHT / 2,
-    GAME_WIDTH,
-    GAME_HEIGHT,
-    0x000000
-  );
-  fadeScreen.setScrollFactor(0);
-  fadeScreen.setDepth(7000);
-  fadeScreen.setAlpha(0);
+  createFadeScreen(this);
 
   // =========================
   // TITLE SCREEN
@@ -2193,6 +2216,29 @@ function enterDoor(playerObject, doorObject) {
 
 
 // =========================
+// ENTER SEWER (from Level1's end sign)
+// =========================
+function enterSewer(playerObject, signObject) {
+
+  if (levelTransitioning || playerIsDead) {
+    return;
+  }
+
+  levelTransitioning = true;
+  playerObject.body.setVelocityX(0);
+
+  playerObject.scene.tweens.add({
+    targets: fadeScreen,
+    alpha: 1,
+    duration: 800,
+    onComplete: () => {
+      playerObject.scene.scene.start('SewerScene');
+    }
+  });
+}
+
+
+// =========================
 // ADD SCORE
 // =========================
 function addScore(points) {
@@ -2220,7 +2266,6 @@ function oneWayPlatformCheck(playerObject, platformObject) {
   return playerObject.body.bottom <= platformObject.body.top + 15;
 }
 
-
 // =========================================================
 // =========================================================
 //                       LEVEL 1
@@ -2233,6 +2278,7 @@ function oneWayPlatformCheck(playerObject, platformObject) {
 function createLevel1() {
 
   currentLevel = 'level1';
+  levelTransitioning = false; // reset - enterDoor() set this true to get here and never reset it, which silently blocked enterSewer() later
 
   this.cameras.main.setBackgroundColor('#000000');
 
@@ -2524,6 +2570,35 @@ function createLevel1() {
   this.physics.add.existing(Building04RightWall, true);
   this.physics.add.existing(billboardCatwalk, true);
 
+  // =========================
+  // HIDE PLACEHOLDER PLATFORM GEOMETRY
+  // =========================
+  // These red/green rectangles are colliders only now that they line
+  // up with the city art (fire escapes, roofs, billboard catwalk,
+  // truck, scaffolds) - hiding them doesn't touch position, size, or
+  // any collider/physics setup above, just visibility.
+  [
+    truckHoodPlatform, truckCabPlatform, truckBoxPlatform,
+    truckFrontBlocker, truckBackBlocker,
+    fireEscapePlatform, fireEscapePlatform2, fireEscapePlatform3,
+    fireEscapePlatform4, fireEscapePlatform5, fireEscapePlatform6,
+    fireEscapePlatform7, fireEscapePlatform8, fireEscapePlatform9,
+    fireEscapePlatform10, fireEscapePlatform11, fireEscapePlatform12,
+    fireEscapePlatform13, fireEscapePlatform14, fireEscapePlatform15,
+    fireEscapePlatform16, fireEscapePlatform17, fireEscapePlatform18,
+    Building01roof, Building01LeftWall,
+    Building02roof,
+    Building03roof, Building03LeftWall, Building03RightWall,
+    Building04roof, Building04LeftWall, Building04RightWall,
+    Building05roof, Building06roof, Building07roof, Building08roof,
+    Building09roof, Building10roof, Building11roof, Building12roof,
+    billboardCatwalk, billboardJumpScaffoldPlatform, building06ScaffoldPlatform
+  ].forEach(p => {
+    if (p) {
+      p.setVisible(false);
+    }
+  });
+
   // STREET GROUND VISUAL
   const streetY = 520;
   const streetSpacing = 1400;
@@ -2704,10 +2779,24 @@ function createLevel1() {
   // =========================
   // LEVEL END SIGN
   // =========================
- 
-  const levelEndSign = this.add.image(12350, 300, 'level1EndSign');
+  // Now a physics sprite with an overlap trigger (was a plain image) -
+  // touching it fades to black and starts SewerScene, same pattern as
+  // apartmentDoor -> enterDoor.
+  const levelEndSign = this.physics.add.sprite(12350, 480, 'level1EndSign');
   levelEndSign.setScale(0.2);
   levelEndSign.setDepth(8); // same layer as the steam traps/street props
+  levelEndSign.setOrigin(0.5, 1); // anchor to its base, same approach used for the goblins - so "y" means "where it touches the ground," not its visual center
+  levelEndSign.body.allowGravity = false;
+  levelEndSign.body.immovable = true;
+  // Shrink the body to roughly the sign's actual footprint instead of
+  // the full (likely tall/pole-shaped) source image bounds, and anchor
+  // that body to the same bottom-center origin set above - otherwise
+  // the default body covers the whole sprite rectangle including empty
+  // space far above where the player's body actually runs.
+  levelEndSign.body.setSize(levelEndSign.width * 0.6, levelEndSign.height * 0.5);
+  levelEndSign.body.setOffset(levelEndSign.width * 0.2, levelEndSign.height * 0.5);
+
+  this.physics.add.overlap(player, levelEndSign, enterSewer, null, this);
 
   // =========================
   // 2 MORE NORMAL (patrolling) BATS - above the Building08-12 roof
@@ -2834,6 +2923,11 @@ function createLevel1() {
   // HUD / CONTROLS
   // =========================
   createHUD(this);
+
+  // =========================
+  // LEVEL TRANSITION FADE SCREEN
+  // =========================
+  createFadeScreen(this);
 }
 
 
@@ -3000,4 +3094,472 @@ function updateParallaxObject(obj, scene) {
 
   obj.x = obj.baseX + scene.cameras.main.scrollX * (1 - obj.parallaxFactor);
   obj.body.updateFromGameObject();
+}
+
+
+// =========================================================
+// =========================================================
+//                    SEWER SCENE (Level 2)
+// =========================================================
+// =========================================================
+// Platform-based level (no continuous floor) over an instant-death
+// toxic water hazard. Reuses createPlayer, oneWayPlatformCheck,
+// updateParallaxObject, cullOffscreenBullets, settleCasings, etc.
+// exactly as they already exist - nothing shared is touched.
+//
+// SCOPE OF THIS FILE: geometry skeleton only. No enemies yet.
+// Sections 1-18 per the sewer level plan, placeholder rectangles,
+// toxic water kill-zone, and the level1EndSign -> fade -> SewerScene
+// trigger. Enemy population comes in a later pass.
+
+const LEVEL_SEWER_WIDTH = GAME_WIDTH * 10; // 12800, matches LEVEL1_WIDTH scale per your call
+
+// Toxic water sits at the bottom of the whole level. Surface Y chosen
+// lower than Level1's old floor (y:500) so platforms above it have
+// room to float without feeling cramped against the kill-zone.
+const TOXIC_WATER_Y = 560;
+
+let toxicWater; // static body, instant-death overlap with player
+
+// Sewer platform globals - one named var per platform, same pattern
+// as fireEscapePlatform1-18 in Level1, so the parallax loop can
+// address each one individually if/when these go parallax later.
+// All currently parallaxFactor 1 (no parallax) - can be changed per
+// platform if you want depth separation once we're past geometry.
+let sewerPlatform01, sewerPlatform02, sewerPlatform03, sewerPlatform04,
+    sewerPlatform05, sewerPlatform06, sewerPlatform07, sewerPlatform08,
+    sewerPlatform09, sewerPlatform10, sewerPlatform11, sewerPlatform12,
+    sewerPlatform13, sewerPlatform14, sewerPlatform15, sewerPlatform16,
+    sewerPlatform17, sewerPlatform18, sewerPlatform19, sewerPlatform20,
+    sewerPlatform21, sewerPlatform22, sewerPlatform23, sewerPlatform24,
+    sewerPlatform25, sewerPlatform26, sewerPlatform27, sewerPlatform28,
+    sewerPlatform29, sewerPlatform30, sewerPlatform31;
+
+// The moving platform in section 13 needs its own update logic (bobs
+// up/down) - kept separate from the static platform list above.
+let movingPlatform13;
+
+let sewerExitDoor;
+
+
+// =========================
+// HIT TOXIC WATER (instant death, separate from hurtPlayer)
+// =========================
+// Does NOT go through hurtPlayer at all - no health decrement, no hurt
+// tint, no knockback. Straight to the death/respawn-or-gameover flow,
+// since contact with toxic water is specified as an instant kill, not
+// a damage source.
+function hitToxicWater(playerObject, waterObject) {
+
+  if (debugInvincible) {
+    return;
+  }
+
+  if (playerIsDead) {
+    return;
+  }
+
+  playerIsDead = true;
+  playerIsHurt = false;
+
+  playerObject.setTexture('playerDead');
+  playerObject.setVelocity(0, 0);
+  playerObject.body.allowGravity = false; // stop sinking into the water visually
+
+  playerLives--;
+  livesDisplay.setTexture('lives' + playerLives);
+
+  console.log("Player lives:", playerLives, "(toxic water)");
+
+  playerObject.scene.time.delayedCall(700, () => {
+
+    if (playerLives > 0) {
+
+      playerHealth = 3;
+      playerIsDead = false;
+      playerIsHurt = false;
+      playerCanTakeDamage = true;
+
+      playerObject.clearTint();
+      playerObject.body.allowGravity = true;
+
+      // Respawn at the start of the current section's checkpoint.
+      // For this skeleton pass, respawn at the level start - section
+      // checkpoints can be added once the layout is confirmed.
+      playerObject.x = 150;
+      playerObject.y = 300;
+
+      playerObject.setVelocity(0, 0);
+      healthBar.setTexture('health3');
+
+    } else {
+
+      console.log("GAME OVER");
+      gameOverScreen.setVisible(true);
+    }
+  });
+}
+
+
+// =========================
+// SEWER SCENE CREATE
+// =========================
+function createSewerScene() {
+
+  currentLevel = 'sewer';
+  levelTransitioning = false; // reset so the next level's own trigger isn't blocked
+
+  this.cameras.main.setBackgroundColor('#0a0f0a');
+
+  // =========================
+  // TOXIC WATER (instant-death hazard, runs the full level width)
+  // =========================
+  toxicWater = this.add.rectangle(
+    LEVEL_SEWER_WIDTH / 2,
+    TOXIC_WATER_Y + 40,
+    LEVEL_SEWER_WIDTH,
+    80,
+    0x4caf32,
+    0.5
+  );
+  this.physics.add.existing(toxicWater, true);
+
+  // =========================
+  // SECTION 1 - ENTRY TUNNEL (x: 0-700)
+  // Tutorial space, flat-ish, safe to learn controls on.
+  // =========================
+  sewerPlatform01 = this.add.rectangle(150, 480, 500, 20, 0xff0000);
+  sewerPlatform02 = this.add.rectangle(650, 480, 300, 20, 0xff0000);
+
+  // =========================
+  // SECTION 2 - LOW CATWALK (x: 700-1150)
+  // First drips begin here (visual only for now, added later).
+  // =========================
+  sewerPlatform03 = this.add.rectangle(1000, 480, 350, 20, 0xff0000);
+
+  // =========================
+  // SECTION 3 - FIRST PIPE AMBUSH (x: 1150-1600)
+  // Pipe sits between platform03 and platform04 - rat ambush spot,
+  // added in enemy pass. Geometry just needs the platform gap here.
+  // =========================
+  sewerPlatform04 = this.add.rectangle(1500, 460, 280, 20, 0xff0000);
+
+  // =========================
+  // SECTION 4 - GAP CROSSING (x: 1600-2050)
+  // Short jump over toxic water - gap kept inside the ~300px comfortable
+  // jump envelope.
+  // =========================
+  sewerPlatform05 = this.add.rectangle(1950, 460, 260, 20, 0xff0000);
+
+  // =========================
+  // SECTION 5 - JUNK PILE AREA (x: 2050-2700)
+  // Wider platform - junk pile rats charge along it. Slightly longer
+  // run-up room since this is a melee-charge enemy, not ambush.
+  // =========================
+  sewerPlatform06 = this.add.rectangle(2400, 480, 600, 20, 0xff0000);
+
+  // =========================
+  // SECTION 6 - SLIME PATROL (x: 2700-3200)
+  // Excuse Slime patrols this platform back and forth.
+  // =========================
+  sewerPlatform07 = this.add.rectangle(2950, 480, 450, 20, 0xff0000);
+
+  // =========================
+  // SECTION 7 - HIGH PLATFORM (x: 3200-3700)
+  // Step-up sequence: low platform -> mid -> high, ~150-170px rises
+  // each step, within single-jump height.
+  // =========================
+  sewerPlatform08 = this.add.rectangle(3300, 460, 220, 20, 0xff0000);
+  sewerPlatform09 = this.add.rectangle(3550, 320, 220, 20, 0xff0000);
+
+  // =========================
+  // SECTION 8 - RANGED THREAT (x: 3700-4250)
+  // Junk Food Goblin platform, elevated, with a lower platform for the
+  // player to weave/stay-low on while taking can fire.
+  // =========================
+  sewerPlatform10 = this.add.rectangle(3950, 320, 280, 20, 0xff0000); // goblin's platform
+  sewerPlatform11 = this.add.rectangle(4200, 460, 260, 20, 0xff0000); // lower weave platform
+
+  // =========================
+  // SECTION 9 - DROP DOWN (x: 4250-4700)
+  // Drops the player from the high path back down toward water level,
+  // ending the top part. Last platform before bottom-part starts.
+  // =========================
+  sewerPlatform12 = this.add.rectangle(4500, 460, 240, 20, 0xff0000);
+  sewerPlatform13 = this.add.rectangle(4700, 480, 260, 20, 0xff0000); // bottom-part entry platform
+
+  // =========================================================
+  //                      BOTTOM PART
+  // =========================================================
+
+  // =========================
+  // SECTION 10 - LOWER SEWER (x: 4900-5500)
+  // Narrow path, slime patrol, drips more frequent (visual later).
+  // =========================
+  sewerPlatform14 = this.add.rectangle(5000, 500, 260, 20, 0xff0000);
+  sewerPlatform15 = this.add.rectangle(5300, 500, 220, 20, 0xff0000);
+
+  // =========================
+  // SECTION 11 - DOUBLE JUMP GAP (x: 5500-6200)
+  // Two-part jump over wide water - middle platform is intentionally
+  // small/narrow to force precise landing, not a comfortable rest stop.
+  // =========================
+  sewerPlatform16 = this.add.rectangle(5700, 480, 200, 20, 0xff0000);
+  sewerPlatform17 = this.add.rectangle(5950, 460, 140, 20, 0xff0000); // narrow mid-gap platform
+  sewerPlatform18 = this.add.rectangle(6200, 480, 220, 20, 0xff0000);
+
+  // =========================
+  // SECTION 12 - PIPE SURPRISE (x: 6200-6700)
+  // Another pipe ambush - platform gap sized for the ambush rat's pop-out.
+  // =========================
+  sewerPlatform19 = this.add.rectangle(6450, 480, 260, 20, 0xff0000);
+  sewerPlatform20 = this.add.rectangle(6700, 480, 220, 20, 0xff0000);
+
+  // =========================
+  // SECTION 13 - MOVING PLATFORM (x: 6700-7300)
+  // movingPlatform13 oscillates vertically between platform20 (entry)
+  // and platform21 (exit) - player times the jump across when it's
+  // aligned with one side or the other.
+  // =========================
+  movingPlatform13 = this.add.rectangle(7000, 460, 180, 20, 0xff0000);
+  movingPlatform13.baseY = 460;
+  movingPlatform13.bobRange = 120; // travels between y:400 and y:520
+  movingPlatform13.bobSpeed = 0.0015;
+
+  sewerPlatform21 = this.add.rectangle(7300, 480, 240, 20, 0xff0000);
+
+  // =========================
+  // SECTION 14 - SLIME GAUNTLET (x: 7300-8100)
+  // Multiple slimes, tight platform spacing requiring precision -
+  // several smaller platforms close together rather than one long run.
+  // =========================
+  sewerPlatform22 = this.add.rectangle(7550, 480, 200, 20, 0xff0000);
+  sewerPlatform23 = this.add.rectangle(7800, 480, 200, 20, 0xff0000);
+  sewerPlatform24 = this.add.rectangle(8050, 480, 200, 20, 0xff0000);
+
+  // =========================
+  // SECTION 15 - OVERHEAD HAZARD RUN (x: 8100-8800)
+  // Heavy drip section (visual later), few safe pauses - kept as a
+  // longer continuous run rather than broken platforms, so the danger
+  // is the drips overhead, not the jumping itself.
+  // =========================
+  sewerPlatform25 = this.add.rectangle(8450, 480, 700, 20, 0xff0000);
+
+  // =========================
+  // SECTION 16 - GOBLIN NEST (x: 8800-9500)
+  // Two Junk Food Goblins throwing cans from different angles/heights -
+  // staggered platform heights so their throw angles actually differ.
+  // =========================
+  sewerPlatform26 = this.add.rectangle(8950, 420, 260, 20, 0xff0000); // goblin 1 platform (lower)
+  sewerPlatform27 = this.add.rectangle(9250, 300, 260, 20, 0xff0000); // goblin 2 platform (higher)
+  sewerPlatform28 = this.add.rectangle(9500, 480, 240, 20, 0xff0000); // player landing platform
+
+  // =========================
+  // SECTION 17 - FINAL STRETCH (x: 9500-10200)
+  // Last jumps to the exit - moderate spacing, drips persist (visual
+  // later), nothing exotic geometry-wise.
+  // =========================
+  sewerPlatform29 = this.add.rectangle(9750, 460, 220, 20, 0xff0000);
+  sewerPlatform30 = this.add.rectangle(10000, 480, 220, 20, 0xff0000);
+
+  // =========================
+  // SECTION 18 - EXIT CHAMBER (x: 10200-10700)
+  // Safe zone, solid ground (no toxic water risk here), door to next
+  // level. Wide platform since this is meant to feel safe, not tense.
+  // =========================
+  sewerPlatform31 = this.add.rectangle(10450, 480, 600, 20, 0xff0000);
+
+  // Exit door - same overlap-trigger pattern as apartmentDoor, just
+  // pointed at whatever comes after the sewer (stubbed for now).
+  sewerExitDoor = this.physics.add.sprite(10700, 410, 'apartmentDoor');
+  sewerExitDoor.setScale(1);
+  sewerExitDoor.setDepth(10);
+  sewerExitDoor.body.allowGravity = false;
+  sewerExitDoor.body.immovable = true;
+
+
+  // =========================
+  // PLAYER
+  // =========================
+  player = createPlayer(this, 150, 300);
+
+  // =========================
+  // GROUPS / INPUT
+  // =========================
+  bullets = this.physics.add.group();
+  casings = this.physics.add.group();
+
+  cursors = this.input.keyboard.createCursorKeys();
+  fireKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+  restartKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+  invincibleKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I);
+
+  // =========================
+  // COLLIDERS - every sewer platform, one-way via oneWayPlatformCheck
+  // =========================
+  const allSewerPlatforms = [
+    sewerPlatform01, sewerPlatform02, sewerPlatform03, sewerPlatform04,
+    sewerPlatform05, sewerPlatform06, sewerPlatform07, sewerPlatform08,
+    sewerPlatform09, sewerPlatform10, sewerPlatform11, sewerPlatform12,
+    sewerPlatform13, sewerPlatform14, sewerPlatform15, sewerPlatform16,
+    sewerPlatform17, sewerPlatform18, sewerPlatform19, sewerPlatform20,
+    sewerPlatform21, sewerPlatform22, sewerPlatform23, sewerPlatform24,
+    sewerPlatform25, sewerPlatform26, sewerPlatform27, sewerPlatform28,
+    sewerPlatform29, sewerPlatform30, sewerPlatform31
+  ];
+
+  allSewerPlatforms.forEach(p => {
+    this.physics.add.existing(p, true);
+    this.physics.add.collider(player, p, null, oneWayPlatformCheck, this);
+    this.physics.add.collider(casings, p, null, oneWayPlatformCheck, this);
+  });
+
+  // Moving platform gets its own collider (not one-way, since it's a
+  // single jump-across rather than a stack to drop through) and is
+  // NOT in allSewerPlatforms above, since its Y changes every frame
+  // under update logic rather than sitting static.
+  this.physics.add.existing(movingPlatform13, true);
+  this.physics.add.collider(player, movingPlatform13, null, oneWayPlatformCheck, this);
+  this.physics.add.collider(casings, movingPlatform13, null, oneWayPlatformCheck, this);
+
+  // Toxic water - instant death overlap, separate from every other
+  // collider above.
+  this.physics.add.overlap(player, toxicWater, hitToxicWater, null, this);
+
+  // Exit door overlap - stubbed destination scene for now.
+  this.physics.add.overlap(player, sewerExitDoor, enterSewerExit, null, this);
+
+  // =========================
+  // WORLD / CAMERA
+  // =========================
+  this.physics.world.setBounds(0, -450, LEVEL_SEWER_WIDTH, GAME_HEIGHT + 750);
+  this.cameras.main.setBounds(0, -450, LEVEL_SEWER_WIDTH, GAME_HEIGHT + 450);
+  this.cameras.main.startFollow(player);
+
+  // =========================
+  // HUD / CONTROLS
+  // =========================
+  createHUD(this);
+
+  // =========================
+  // LEVEL TRANSITION FADE SCREEN
+  // =========================
+  createFadeScreen(this);
+}
+
+
+// =========================
+// SEWER SCENE UPDATE
+// =========================
+function updateSewerScene() {
+
+  if (Phaser.Input.Keyboard.JustDown(invincibleKey)) {
+    debugInvincible = !debugInvincible;
+    console.log("Invincibility:", debugInvincible ? "ON" : "OFF");
+  }
+
+  if (playerIsDead) {
+    player.body.setVelocityX(0);
+    player.setTexture('playerDead');
+    updateMovingPlatform13(this);
+    return;
+  }
+
+  // MOVE LEFT / RIGHT
+  if (cursors.left.isDown || moveLeft) {
+    player.body.setVelocityX(-300);
+    player.setFlipX(true);
+  } else if (cursors.right.isDown || moveRight) {
+    player.body.setVelocityX(300);
+    player.setFlipX(false);
+  } else {
+    player.body.setVelocityX(0);
+  }
+
+  // JUMP
+  if ((cursors.up.isDown || jumpPressed) && player.body.blocked.down) {
+    player.body.setVelocityY(-600);
+  }
+
+  // CROUCH
+  playerIsCrouching =
+    (cursors.down.isDown || crouchPressed) &&
+    player.body.blocked.down;
+
+  if (playerIsCrouching) {
+    player.body.setVelocityX(0);
+    player.setTexture('playerCrouch');
+  } else if (!player.body.blocked.down) {
+    if (player.body.velocity.y < -100) {
+      player.setTexture('playerJump1');
+    } else if (player.body.velocity.y >= -100 && player.body.velocity.y <= 100) {
+      player.setTexture('playerJump2');
+    } else {
+      player.setTexture('playerJump3');
+    }
+  } else if (cursors.left.isDown || cursors.right.isDown || moveLeft || moveRight) {
+    player.play('run', true);
+  } else {
+    player.play('idle', true);
+  }
+
+  // SHOOTING (kept identical to Level1 - no enemies yet, but bullets
+  // need to exist/cull correctly from the start)
+  if (Phaser.Input.Keyboard.JustDown(fireKey) && !playerIsDead) {
+    firePlayerBullet(this);
+  }
+
+  if (activeUpgrade === 'firerate' && !playerIsDead && (fireKey.isDown || firePressed)) {
+    firePlayerBullet(this);
+  }
+
+  cullOffscreenBullets(this);
+  updateActiveUpgrade(this);
+  settleCasings();
+
+  updateMovingPlatform13(this);
+}
+
+
+// =========================
+// SHARED-STYLE: UPDATE THE SECTION-13 MOVING PLATFORM
+// =========================
+// Scoped to this scene only (not added to the shared function block
+// above the scene definitions) since no other level currently has a
+// vertically-oscillating platform. Bobs between baseY - bobRange/2 and
+// baseY + bobRange/2 using a sine wave, same timing style as the swoop
+// bat's hover bob.
+function updateMovingPlatform13(scene) {
+  if (!movingPlatform13 || !movingPlatform13.body) {
+    return;
+  }
+
+  movingPlatform13.y = movingPlatform13.baseY +
+    Math.sin(scene.time.now * movingPlatform13.bobSpeed) * (movingPlatform13.bobRange / 2);
+
+  movingPlatform13.body.updateFromGameObject();
+}
+
+
+// =========================
+// ENTER SEWER EXIT (stub - destination scene TBD)
+// =========================
+function enterSewerExit(playerObject, doorObject) {
+
+  if (levelTransitioning || playerIsDead) {
+    return;
+  }
+
+  levelTransitioning = true;
+  playerObject.body.setVelocityX(0);
+
+  playerObject.scene.tweens.add({
+    targets: fadeScreen,
+    alpha: 1,
+    duration: 800,
+    onComplete: () => {
+      // Placeholder - no scene exists past the sewer yet.
+      console.log("Sewer level complete - next scene not yet built.");
+    }
+  });
 }
