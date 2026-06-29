@@ -174,7 +174,7 @@ const config = {
     default: 'arcade',
     arcade: {
       gravity: { y: 1000 },
-      debug: false
+      debug: true
     }
   },
 
@@ -394,6 +394,27 @@ function preload() {
   this.load.image('pickupUpgrade', 'assets/pickup_upgrade.png');
   this.load.image('pickupHealth', 'assets/pickup_health.png');
   this.load.image('level1EndSign', 'assets/city_level1_end.png');
+
+   // =========================
+  // SEWER ASSETS
+  // =========================
+  this.load.image('sewerSludge', 'assets/sewer_sludge.png');
+  this.load.image('sewerSludge02', 'assets/sewer_sludge02.png');
+  this.load.image('sewerSludge03', 'assets/sewer_sludge03.png');
+    this.load.image('sewerPlatformLong', 'assets/sewer_platform_long.png');
+  this.load.image('sewerPlatformMed', 'assets/sewer_platform_med.png');
+  this.load.image('sewerPlatformSmall', 'assets/sewer_platform_small.png');
+  this.load.image('sewerWallPlain', 'assets/sewer_wall_plain.png');
+  this.load.image('sewerWallBars', 'assets/sewer_wall_bars.png');
+  this.load.image('sewerWallEyes01', 'assets/sewer_wall_eyes01.png');
+  this.load.image('sewerWallEyes02', 'assets/sewer_wall_eyes02.png');
+  this.load.image('sewerWallEyes03', 'assets/sewer_wall_eyes03.png');
+    this.load.image('sewerPipeStraight', 'assets/sewer_pipe_straight.png');
+  this.load.image('sewerPipeVert', 'assets/sewer_pipe_vert.png');
+  this.load.image('sewerPipeT', 'assets/sewer_pipe_t.png');
+  this.load.image('sewerPipeValve', 'assets/sewer_pipe_valve.png');
+  
+
 }
 
 
@@ -872,7 +893,16 @@ function settleCasings() {
 // =========================
 // SHARED: SPAWN A SLIME
 // =========================
-function spawnSlime(scene, x, y, groundObject, leftBound, rightBound, direction = -1) {
+function spawnSlime(
+  scene,
+  x,
+  y,
+  groundObject,
+  leftBound,
+  rightBound,
+  direction = -1,
+  bodyConfig = null
+) {
 
   const slimeObj = scene.physics.add.sprite(x, y, 'slimeWalk1');
 
@@ -880,6 +910,17 @@ function spawnSlime(scene, x, y, groundObject, leftBound, rightBound, direction 
   slimeObj.setDepth(15);
   slimeObj.health = 2;
   slimeObj.isDead = false;
+    if (bodyConfig) {
+    slimeObj.body.setSize(
+      slimeObj.width * bodyConfig.width,
+      slimeObj.height * bodyConfig.height
+    );
+
+    slimeObj.body.setOffset(
+      slimeObj.width * bodyConfig.offsetX,
+      slimeObj.height * bodyConfig.offsetY
+    );
+  }
   slimeObj.direction = direction;
   slimeObj.leftBound = leftBound;
   slimeObj.rightBound = rightBound;
@@ -3140,6 +3181,7 @@ let sewerPlatform01, sewerPlatform02, sewerPlatform03, sewerPlatform04,
 let movingPlatform13;
 
 let sewerExitDoor;
+let sewerSlimeDrops = [];
 
 
 // =========================
@@ -3204,16 +3246,301 @@ function hitToxicWater(playerObject, waterObject) {
 // =========================
 // SEWER SCENE CREATE
 // =========================
+// =========================
+// CREATE SEWER PLATFORM VISUAL
+// =========================
+function createSewerPlatformVisual(scene, platform) {
+
+  let textureKey;
+
+  if (platform.width >= 400) {
+    textureKey = 'sewerPlatformLong';
+  } else if (platform.width >= 250) {
+    textureKey = 'sewerPlatformMed';
+  } else {
+    textureKey = 'sewerPlatformSmall';
+  }
+
+  const visual = scene.add.image(
+    platform.x,
+    platform.y - 100, // offset so the visual sits above the physics body
+    textureKey
+  );
+
+  visual.setOrigin(0.5, 0);
+  visual.setDepth(5);
+
+  const scale = platform.width / visual.width;
+  visual.setScale(scale);
+
+  platform.setVisible(false);
+  platform.visual = visual;
+
+  return visual;
+}
+// =========================
+// CREATE SEWER PIPE DECOR
+// =========================
+function createSewerPipeDecor(scene, x, y, textureKey, scale = 0.25, flipX = false) {
+
+  const pipe = scene.add.image(x, y, textureKey);
+
+  pipe.setScale(scale);
+  pipe.setDepth(-20);
+  pipe.setFlipX(flipX);
+
+  return pipe;
+}
+// =========================
+// CREATE CONNECTED HORIZONTAL SEWER PIPE RUN
+// =========================
+function createConnectedSewerPipeRun(scene, startX, y, pieces, scale = 0.25) {
+
+  let nextLeftEdge = startX;
+  const createdPieces = [];
+
+  pieces.forEach(piece => {
+
+    const pipe = scene.add.image(
+      0,
+      y,
+      piece.texture
+    );
+
+    pipe.setScale(scale);
+    pipe.setDepth(-20);
+
+    if (piece.flipX) {
+      pipe.setFlipX(true);
+    }
+
+    // Position this pipe so its left edge touches the previous pipe's
+    // right edge exactly.
+    const PIPE_OVERLAP = 18;
+
+pipe.x = nextLeftEdge + (pipe.displayWidth / 2);
+
+nextLeftEdge += pipe.displayWidth - PIPE_OVERLAP;
+
+    createdPieces.push(pipe);
+  });
+
+  return createdPieces;
+}
+// =========================
+// SPAWN SEWER SLIME DROP HAZARD
+// =========================
+function spawnSewerSlimeDrop(scene, x, y, options = {}) {
+
+  const {
+    warningDuration = 700,
+    cooldownDuration = 2200,
+    dropSpeed = 420
+  } = options;
+
+  // Permanent ceiling glob
+  const baseGlob = scene.add.image(x, y, 'sewerSlimeDrop01');
+  baseGlob.setDepth(35);
+  baseGlob.setDisplaySize(55, 55);
+
+  // Warning overlay
+  const warning = scene.add.image(x, y, 'sewerSlimeDrop02');
+  warning.setDepth(36);
+  warning.setDisplaySize(55, 55);
+  warning.setVisible(false);
+
+  // Falling damaging drop
+  const fallingDrop = scene.physics.add.sprite(
+    x,
+    y + 20,
+    'sewerSlimeDrop03'
+  );
+
+  fallingDrop.setDepth(37);
+    fallingDrop.setDisplaySize(35, 60);
+  fallingDrop.body.allowGravity = false;
+   fallingDrop.disableBody(true, true);
+
+  const hazard = {
+    x,
+    y,
+    baseGlob,
+    warning,
+    fallingDrop,
+    warningDuration,
+    cooldownDuration,
+    dropSpeed,
+    state: 'idle',
+    nextStateAt: scene.time.now + cooldownDuration
+  };
+
+  scene.physics.add.overlap(
+    player,
+    fallingDrop,
+    hurtPlayer,
+    null,
+    scene
+  );
+
+  sewerSlimeDrops.push(hazard);
+
+  return hazard;
+}
+// =========================
+// UPDATE SEWER SLIME DROP HAZARD
+// =========================
+function updateSewerSlimeDrop(scene, hazard) {
+
+  if (!hazard) {
+    return;
+  }
+
+  // WAITING: frame 01 remains permanently visible
+  if (hazard.state === 'idle') {
+
+    if (scene.time.now >= hazard.nextStateAt) {
+      hazard.state = 'warning';
+
+      // Frame 02 appears directly over frame 01
+      hazard.warning.setPosition(hazard.x, hazard.y);
+      hazard.warning.setVisible(true);
+
+      hazard.nextStateAt =
+        scene.time.now + hazard.warningDuration;
+    }
+
+    return;
+  }
+
+  // WARNING: frame 02 plays briefly before frame 03 drops
+  if (hazard.state === 'warning') {
+
+    if (scene.time.now >= hazard.nextStateAt) {
+      hazard.state = 'falling';
+
+      hazard.warning.setVisible(false);
+
+      hazard.fallingDrop.enableBody(
+        true,
+        hazard.x,
+        hazard.y + 25,
+        true,
+        true
+      );
+
+      hazard.fallingDrop.setDisplaySize(35, 60);
+      hazard.fallingDrop.setVelocity(0, hazard.dropSpeed);
+    }
+
+    return;
+  }
+
+  // FALLING: frame 03 drops and damages the player
+  if (hazard.state === 'falling') {
+
+    if (
+      hazard.fallingDrop.y >
+      TOXIC_WATER_Y + 100
+    ) {
+      hazard.fallingDrop.disableBody(true, true);
+
+      hazard.state = 'idle';
+      hazard.nextStateAt =
+        scene.time.now + hazard.cooldownDuration;
+    }
+  }
+}
 function createSewerScene() {
 
   currentLevel = 'sewer';
   levelTransitioning = false; // reset so the next level's own trigger isn't blocked
 
   this.cameras.main.setBackgroundColor('#0a0f0a');
+    // =========================
+  // SEWER BACKGROUND WALLS
+  // =========================
+  const sewerEyeWalls = [];
+
+  const sewerWallPattern = [
+    'sewerWallPlain',
+    'sewerWallBars',
+    'sewerWallPlain',
+    'sewerWallEyes01'
+  ];
+
+  for (let x = 0; x < LEVEL_SEWER_WIDTH; x += GAME_WIDTH) {
+
+    const textureKey =
+      sewerWallPattern[(x / GAME_WIDTH) % sewerWallPattern.length];
+
+    const wall = this.add.image(
+      x + (GAME_WIDTH / 2),
+      GAME_HEIGHT / 2,
+      textureKey
+    );
+
+    wall.setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
+    wall.setDepth(-100);
+
+    if (textureKey === 'sewerWallEyes01') {
+      sewerEyeWalls.push(wall);
+    }
+  }
+    const sewerEyeFrames = [
+    'sewerWallEyes01',
+    'sewerWallEyes02',
+    'sewerWallEyes03',
+    'sewerWallEyes02',
+    'sewerWallEyes01'
+  ];
+
+  let sewerEyeFrameIndex = 0;
+
+  this.time.addEvent({
+    delay: 180,
+    loop: true,
+    callback: () => {
+
+      sewerEyeFrameIndex =
+        (sewerEyeFrameIndex + 1) % sewerEyeFrames.length;
+
+      sewerEyeWalls.forEach(wall => {
+        wall.setTexture(sewerEyeFrames[sewerEyeFrameIndex]);
+        wall.setDisplaySize(GAME_WIDTH, GAME_HEIGHT);
+      });
+    }
+  });
 
   // =========================
   // TOXIC WATER (instant-death hazard, runs the full level width)
   // =========================
+    const sludgeVisual = this.add.tileSprite(
+    LEVEL_SEWER_WIDTH / 2,
+    TOXIC_WATER_Y - 100,
+    LEVEL_SEWER_WIDTH,
+    160,
+    'sewerSludge'
+  );
+
+  sludgeVisual.setDepth(0);
+  sludgeVisual.setOrigin(0.5, 0);
+    sludgeVisual.setTileScale(0.2, 0.2);
+      const sludgeFrames = [
+    'sewerSludge',
+    'sewerSludge02',
+    'sewerSludge03'
+  ];
+
+  let sludgeFrameIndex = 0;
+
+  this.time.addEvent({
+    delay: 250,
+    loop: true,
+    callback: () => {
+      sludgeFrameIndex = (sludgeFrameIndex + 1) % sludgeFrames.length;
+      sludgeVisual.setTexture(sludgeFrames[sludgeFrameIndex]);
+    }
+  });
   toxicWater = this.add.rectangle(
     LEVEL_SEWER_WIDTH / 2,
     TOXIC_WATER_Y + 40,
@@ -3222,152 +3549,92 @@ function createSewerScene() {
     0x4caf32,
     0.5
   );
+    toxicWater.setVisible(false);
   this.physics.add.existing(toxicWater, true);
 
+    // =========================
+  // SECTION 1 - ENTRY TUNNEL
   // =========================
-  // SECTION 1 - ENTRY TUNNEL (x: 0-700)
-  // Tutorial space, flat-ish, safe to learn controls on.
-  // =========================
-  sewerPlatform01 = this.add.rectangle(150, 480, 500, 20, 0xff0000);
-  sewerPlatform02 = this.add.rectangle(650, 480, 300, 20, 0xff0000);
+  sewerPlatform01 = this.add.rectangle(200, 500, 500, 20, 0xff0000);
+  sewerPlatform02 = this.add.rectangle(650, 460, 260, 20, 0xff0000);
 
   // =========================
-  // SECTION 2 - LOW CATWALK (x: 700-1150)
-  // First drips begin here (visual only for now, added later).
+  // SECTION 2 - RISING CATWALKS
   // =========================
-  sewerPlatform03 = this.add.rectangle(1000, 480, 350, 20, 0xff0000);
+  sewerPlatform03 = this.add.rectangle(1000, 400, 260, 20, 0xff0000);
+  sewerPlatform04 = this.add.rectangle(1350, 300, 220, 20, 0xff0000);
 
-  // =========================
-  // SECTION 3 - FIRST PIPE AMBUSH (x: 1150-1600)
-  // Pipe sits between platform03 and platform04 - rat ambush spot,
-  // added in enemy pass. Geometry just needs the platform gap here.
-  // =========================
-  sewerPlatform04 = this.add.rectangle(1500, 460, 280, 20, 0xff0000);
-
-  // =========================
-  // SECTION 4 - GAP CROSSING (x: 1600-2050)
-  // Short jump over toxic water - gap kept inside the ~300px comfortable
-  // jump envelope.
-  // =========================
-  sewerPlatform05 = this.add.rectangle(1950, 460, 260, 20, 0xff0000);
-
-  // =========================
-  // SECTION 5 - JUNK PILE AREA (x: 2050-2700)
-  // Wider platform - junk pile rats charge along it. Slightly longer
-  // run-up room since this is a melee-charge enemy, not ambush.
-  // =========================
-  sewerPlatform06 = this.add.rectangle(2400, 480, 600, 20, 0xff0000);
-
-  // =========================
-  // SECTION 6 - SLIME PATROL (x: 2700-3200)
-  // Excuse Slime patrols this platform back and forth.
-  // =========================
-  sewerPlatform07 = this.add.rectangle(2950, 480, 450, 20, 0xff0000);
-
-  // =========================
-  // SECTION 7 - HIGH PLATFORM (x: 3200-3700)
-  // Step-up sequence: low platform -> mid -> high, ~150-170px rises
-  // each step, within single-jump height.
-  // =========================
-  sewerPlatform08 = this.add.rectangle(3300, 460, 220, 20, 0xff0000);
-  sewerPlatform09 = this.add.rectangle(3550, 320, 220, 20, 0xff0000);
-
-  // =========================
-  // SECTION 8 - RANGED THREAT (x: 3700-4250)
-  // Junk Food Goblin platform, elevated, with a lower platform for the
-  // player to weave/stay-low on while taking can fire.
-  // =========================
-  sewerPlatform10 = this.add.rectangle(3950, 320, 280, 20, 0xff0000); // goblin's platform
-  sewerPlatform11 = this.add.rectangle(4200, 460, 260, 20, 0xff0000); // lower weave platform
-
-  // =========================
-  // SECTION 9 - DROP DOWN (x: 4250-4700)
-  // Drops the player from the high path back down toward water level,
-  // ending the top part. Last platform before bottom-part starts.
-  // =========================
-  sewerPlatform12 = this.add.rectangle(4500, 460, 240, 20, 0xff0000);
-  sewerPlatform13 = this.add.rectangle(4700, 480, 260, 20, 0xff0000); // bottom-part entry platform
+  // Drop back toward the sludge
+  sewerPlatform05 = this.add.rectangle(1700, 440, 280, 20, 0xff0000);
+  sewerPlatform06 = this.add.rectangle(2150, 500, 420, 20, 0xff0000);
+  sewerPlatform07 = this.add.rectangle(2600, 420, 300, 20, 0xff0000);
 
   // =========================================================
-  //                      BOTTOM PART
+  // ROUTE SPLIT 1
+  // Lower route is easier but closer to the sludge.
+  // Upper route requires more climbing and precision.
   // =========================================================
 
-  // =========================
-  // SECTION 10 - LOWER SEWER (x: 4900-5500)
-  // Narrow path, slime patrol, drips more frequent (visual later).
-  // =========================
-  sewerPlatform14 = this.add.rectangle(5000, 500, 260, 20, 0xff0000);
-  sewerPlatform15 = this.add.rectangle(5300, 500, 220, 20, 0xff0000);
+  // LOWER ROUTE
+  sewerPlatform08 = this.add.rectangle(2950, 500, 260, 20, 0xff0000);
+  sewerPlatform10 = this.add.rectangle(3400, 500, 260, 20, 0xff0000);
+  sewerPlatform12 = this.add.rectangle(3850, 480, 260, 20, 0xff0000);
+  sewerPlatform13 = this.add.rectangle(4300, 500, 300, 20, 0xff0000);
 
-  // =========================
-  // SECTION 11 - DOUBLE JUMP GAP (x: 5500-6200)
-  // Two-part jump over wide water - middle platform is intentionally
-  // small/narrow to force precise landing, not a comfortable rest stop.
-  // =========================
-  sewerPlatform16 = this.add.rectangle(5700, 480, 200, 20, 0xff0000);
-  sewerPlatform17 = this.add.rectangle(5950, 460, 140, 20, 0xff0000); // narrow mid-gap platform
-  sewerPlatform18 = this.add.rectangle(6200, 480, 220, 20, 0xff0000);
+  // UPPER ROUTE
+  sewerPlatform09 = this.add.rectangle(3050, 340, 220, 20, 0xff0000);
+  sewerPlatform11 = this.add.rectangle(3500, 220, 220, 20, 0xff0000);
+  sewerPlatform14 = this.add.rectangle(3950, 320, 240, 20, 0xff0000);
+  sewerPlatform15 = this.add.rectangle(4450, 240, 240, 20, 0xff0000);
 
-  // =========================
-  // SECTION 12 - PIPE SURPRISE (x: 6200-6700)
-  // Another pipe ambush - platform gap sized for the ambush rat's pop-out.
-  // =========================
-  sewerPlatform19 = this.add.rectangle(6450, 480, 260, 20, 0xff0000);
-  sewerPlatform20 = this.add.rectangle(6700, 480, 220, 20, 0xff0000);
+  // BOTH ROUTES REJOIN HERE
+  sewerPlatform16 = this.add.rectangle(4850, 420, 260, 20, 0xff0000);
 
-  // =========================
-  // SECTION 13 - MOVING PLATFORM (x: 6700-7300)
-  // movingPlatform13 oscillates vertically between platform20 (entry)
-  // and platform21 (exit) - player times the jump across when it's
-  // aligned with one side or the other.
-  // =========================
-  movingPlatform13 = this.add.rectangle(7000, 460, 180, 20, 0xff0000);
-  movingPlatform13.baseY = 460;
-  movingPlatform13.bobRange = 120; // travels between y:400 and y:520
+  // =========================================================
+  // ROUTE SPLIT 2
+  // Lower route uses the moving platform.
+  // Upper route stays high over the sludge.
+  // =========================================================
+
+  // LOWER ROUTE
+  sewerPlatform17 = this.add.rectangle(5300, 500, 220, 20, 0xff0000);
+  sewerPlatform19 = this.add.rectangle(5800, 500, 220, 20, 0xff0000);
+  sewerPlatform21 = this.add.rectangle(6300, 480, 240, 20, 0xff0000);
+
+  movingPlatform13 = this.add.rectangle(6800, 430, 180, 20, 0xff0000);
+  movingPlatform13.baseY = 430;
+  movingPlatform13.bobRange = 180;
   movingPlatform13.bobSpeed = 0.0015;
 
-  sewerPlatform21 = this.add.rectangle(7300, 480, 240, 20, 0xff0000);
+  // UPPER ROUTE
+  sewerPlatform18 = this.add.rectangle(5250, 300, 220, 20, 0xff0000);
+  sewerPlatform20 = this.add.rectangle(5750, 200, 220, 20, 0xff0000);
+  sewerPlatform22 = this.add.rectangle(6250, 320, 220, 20, 0xff0000);
+  sewerPlatform23 = this.add.rectangle(6900, 220, 240, 20, 0xff0000);
+
+  // BOTH ROUTES REJOIN HERE
+  sewerPlatform24 = this.add.rectangle(7350, 420, 260, 20, 0xff0000);
 
   // =========================
-  // SECTION 14 - SLIME GAUNTLET (x: 7300-8100)
-  // Multiple slimes, tight platform spacing requiring precision -
-  // several smaller platforms close together rather than one long run.
+  // LONG LOW HAZARD RUN
   // =========================
-  sewerPlatform22 = this.add.rectangle(7550, 480, 200, 20, 0xff0000);
-  sewerPlatform23 = this.add.rectangle(7800, 480, 200, 20, 0xff0000);
-  sewerPlatform24 = this.add.rectangle(8050, 480, 200, 20, 0xff0000);
+  sewerPlatform25 = this.add.rectangle(7750, 500, 500, 20, 0xff0000);
 
   // =========================
-  // SECTION 15 - OVERHEAD HAZARD RUN (x: 8100-8800)
-  // Heavy drip section (visual later), few safe pauses - kept as a
-  // longer continuous run rather than broken platforms, so the danger
-  // is the drips overhead, not the jumping itself.
+  // FINAL VERTICAL CLIMB
   // =========================
-  sewerPlatform25 = this.add.rectangle(8450, 480, 700, 20, 0xff0000);
+  sewerPlatform26 = this.add.rectangle(8250, 360, 240, 20, 0xff0000);
+  sewerPlatform27 = this.add.rectangle(8600, 220, 220, 20, 0xff0000);
+  sewerPlatform28 = this.add.rectangle(8950, 380, 260, 20, 0xff0000);
+
+  // Drop low, then climb once more
+  sewerPlatform29 = this.add.rectangle(9400, 500, 260, 20, 0xff0000);
+  sewerPlatform30 = this.add.rectangle(9800, 340, 240, 20, 0xff0000);
 
   // =========================
-  // SECTION 16 - GOBLIN NEST (x: 8800-9500)
-  // Two Junk Food Goblins throwing cans from different angles/heights -
-  // staggered platform heights so their throw angles actually differ.
+  // EXIT CHAMBER
   // =========================
-  sewerPlatform26 = this.add.rectangle(8950, 420, 260, 20, 0xff0000); // goblin 1 platform (lower)
-  sewerPlatform27 = this.add.rectangle(9250, 300, 260, 20, 0xff0000); // goblin 2 platform (higher)
-  sewerPlatform28 = this.add.rectangle(9500, 480, 240, 20, 0xff0000); // player landing platform
-
-  // =========================
-  // SECTION 17 - FINAL STRETCH (x: 9500-10200)
-  // Last jumps to the exit - moderate spacing, drips persist (visual
-  // later), nothing exotic geometry-wise.
-  // =========================
-  sewerPlatform29 = this.add.rectangle(9750, 460, 220, 20, 0xff0000);
-  sewerPlatform30 = this.add.rectangle(10000, 480, 220, 20, 0xff0000);
-
-  // =========================
-  // SECTION 18 - EXIT CHAMBER (x: 10200-10700)
-  // Safe zone, solid ground (no toxic water risk here), door to next
-  // level. Wide platform since this is meant to feel safe, not tense.
-  // =========================
-  sewerPlatform31 = this.add.rectangle(10450, 480, 600, 20, 0xff0000);
+  sewerPlatform31 = this.add.rectangle(10350, 480, 700, 20, 0xff0000);
 
   // Exit door - same overlap-trigger pattern as apartmentDoor, just
   // pointed at whatever comes after the sewer (stubbed for now).
@@ -3377,12 +3644,36 @@ function createSewerScene() {
   sewerExitDoor.body.allowGravity = false;
   sewerExitDoor.body.immovable = true;
 
+  // =========================
+  // SEWER SLIME DROP HAZARDS
+  // =========================
+  sewerSlimeDrops = [];
 
+  spawnSewerSlimeDrop(this, 1800, 80);
+  spawnSewerSlimeDrop(this, 4100, 80, {
+    cooldownDuration: 1800
+  });
+  spawnSewerSlimeDrop(this, 7900, 80, {
+    warningDuration: 400,
+    cooldownDuration: 1600
+  });
   // =========================
   // PLAYER
   // =========================
   player = createPlayer(this, 150, 300);
+  // =========================
+  // SEWER SLIME DROP HAZARDS
+  // =========================
+  sewerSlimeDrops = [];
 
+  spawnSewerSlimeDrop(this, 1800, 80);
+  spawnSewerSlimeDrop(this, 4100, 80, {
+    cooldownDuration: 1800
+  });
+  spawnSewerSlimeDrop(this, 7900, 80, {
+    warningDuration: 400,
+    cooldownDuration: 1600
+  });
   // =========================
   // GROUPS / INPUT
   // =========================
@@ -3407,7 +3698,11 @@ function createSewerScene() {
     sewerPlatform25, sewerPlatform26, sewerPlatform27, sewerPlatform28,
     sewerPlatform29, sewerPlatform30, sewerPlatform31
   ];
+  allSewerPlatforms.forEach(p => {
+    createSewerPlatformVisual(this, p);
+  });
 
+  createSewerPlatformVisual(this, movingPlatform13);
   allSewerPlatforms.forEach(p => {
     this.physics.add.existing(p, true);
     this.physics.add.collider(player, p, null, oneWayPlatformCheck, this);
@@ -3461,6 +3756,9 @@ function updateSewerScene() {
   if (playerIsDead) {
     player.body.setVelocityX(0);
     player.setTexture('playerDead');
+      sewerSlimeDrops.forEach(hazard => {
+    updateSewerSlimeDrop(this, hazard);
+  });
     updateMovingPlatform13(this);
     return;
   }
@@ -3536,7 +3834,10 @@ function updateMovingPlatform13(scene) {
 
   movingPlatform13.y = movingPlatform13.baseY +
     Math.sin(scene.time.now * movingPlatform13.bobSpeed) * (movingPlatform13.bobRange / 2);
-
+  if (movingPlatform13.visual) {
+    movingPlatform13.visual.x = movingPlatform13.x;
+    movingPlatform13.visual.y = movingPlatform13.y - 40;
+  }
   movingPlatform13.body.updateFromGameObject();
 }
 
