@@ -174,7 +174,7 @@ const config = {
     default: 'arcade',
     arcade: {
       gravity: { y: 1000 },
-      debug: true
+      debug: false
     }
   },
 
@@ -413,8 +413,21 @@ function preload() {
   this.load.image('sewerPipeVert', 'assets/sewer_pipe_vert.png');
   this.load.image('sewerPipeT', 'assets/sewer_pipe_t.png');
   this.load.image('sewerPipeValve', 'assets/sewer_pipe_valve.png');
-  
+    this.load.image('sewerSlimeDrop01', 'assets/sewer_slimedrop01.png');
+  this.load.image('sewerSlimeDrop02', 'assets/sewer_slimedrop02.png');
+  this.load.image('sewerSlimeDrop03', 'assets/sewer_slimedrop03.png');
+  // =========================
+  // SEWER HABIT RATS
+  // =========================
+  this.load.image('sewerRatAmbush01', 'assets/sewer_rat_ambush01.png');
+  this.load.image('sewerRatAmbush02', 'assets/sewer_rat_ambush02.png');
+  this.load.image('sewerRatAmbush03', 'assets/sewer_rat_ambush03.png');
 
+  this.load.image('sewerRatRun01', 'assets/sewer_rat_run01.png');
+  this.load.image('sewerRatRun02', 'assets/sewer_rat_run02.png');
+
+  this.load.image('sewerRatEat01', 'assets/sewer_rat_eat01.png');
+  this.load.image('sewerRatEat02', 'assets/sewer_rat_eat02.png');
 }
 
 
@@ -910,6 +923,16 @@ function spawnSlime(
   slimeObj.setDepth(15);
   slimeObj.health = 2;
   slimeObj.isDead = false;
+    // Level 1 slime alignment:
+  // Smaller, higher body lets the visible slime sit lower on the street.
+  if (currentLevel === 'level1' && !bodyConfig) {
+    bodyConfig = {
+      width: 0.65,
+      height: 0.45,
+      offsetX: 0.175,
+      offsetY: 0.10
+    };
+  }
     if (bodyConfig) {
     slimeObj.body.setSize(
       slimeObj.width * bodyConfig.width,
@@ -3182,7 +3205,7 @@ let movingPlatform13;
 
 let sewerExitDoor;
 let sewerSlimeDrops = [];
-
+let sewerRats = [];
 
 // =========================
 // HIT TOXIC WATER (instant death, separate from hurtPlayer)
@@ -3328,6 +3351,293 @@ nextLeftEdge += pipe.displayWidth - PIPE_OVERLAP;
   return createdPieces;
 }
 // =========================
+// HIT SEWER RAT
+// =========================
+function hitSewerRat(objectA, objectB) {
+
+  let bulletObject;
+  let ratObject;
+
+  if (objectA.texture.key === 'bullet') {
+    bulletObject = objectA;
+    ratObject = objectB;
+  } else {
+    bulletObject = objectB;
+    ratObject = objectA;
+  }
+
+  if (
+    !bulletObject.active ||
+    !ratObject.active ||
+    ratObject.isDead ||
+    ratObject.state === 'hidden'
+  ) {
+    return;
+  }
+
+  bulletObject.disableBody(true, true);
+
+  ratObject.health =
+    bulletObject.isPowerShot ? 0 : ratObject.health - 1;
+
+  ratObject.setTint(0xff4444);
+
+  ratObject.scene.time.delayedCall(100, () => {
+    if (ratObject.active) {
+      ratObject.clearTint();
+    }
+  });
+
+  if (ratObject.health > 0) {
+    return;
+  }
+
+  ratObject.isDead = true;
+  ratObject.disableBody(true, true);
+
+  if (ratObject.ambushBackground) {
+    ratObject.ambushBackground.setVisible(false);
+  }
+
+  addScore(150);
+}
+// =========================
+// SPAWN SEWER AMBUSH RAT
+// =========================
+function spawnSewerAmbushRat(
+  scene,
+  x,
+  pipeY,
+  groundY,
+  groundObject,
+  options = {}
+) {
+
+  const {
+    triggerDistance = 220,
+    chaseSpeed = 180,
+    direction = -1
+  } = options;
+
+  const pipeBackground = scene.add.image(
+    x,
+    pipeY,
+    'sewerRatAmbush01'
+  );
+
+  pipeBackground.setDepth(8);
+  pipeBackground.setDisplaySize(180, 180);
+
+  const rat = scene.physics.add.sprite(
+    x,
+    groundY,
+    'sewerRatRun01'
+  );
+
+  rat.setDepth(18);
+  rat.setDisplaySize(110, 80);
+  rat.setVisible(false);
+  rat.body.enable = false;
+
+  rat.health = 2;
+  rat.isDead = false;
+  rat.state = 'hidden';
+  rat.ratType = 'ambush';
+
+  rat.spawnX = x;
+  rat.pipeY = pipeY;
+  rat.groundY = groundY;
+  rat.triggerDistance = triggerDistance;
+  rat.chaseSpeed = chaseSpeed;
+  rat.direction = direction;
+  rat.ambushBackground = pipeBackground;
+  rat.blinkTimer = scene.time.now + 450;
+  rat.blinkFrame = 0;
+  rat.releaseAt = 0;
+
+  if (!scene.anims.exists('sewerRatRun')) {
+    scene.anims.create({
+      key: 'sewerRatRun',
+      frames: [
+        { key: 'sewerRatRun01' },
+        { key: 'sewerRatRun02' }
+      ],
+      frameRate: 8,
+      repeat: -1
+    });
+  }
+
+  if (groundObject) {
+    scene.physics.add.collider(rat, groundObject);
+  }
+
+  scene.physics.add.overlap(player, rat, hurtPlayer, null, scene);
+  scene.physics.add.overlap(bullets, rat, hitSewerRat, null, scene);
+
+  sewerRats.push(rat);
+
+  return rat;
+}
+// =========================
+// SPAWN SEWER EATING RAT
+// =========================
+function spawnSewerEatingRat(
+  scene,
+  x,
+  y,
+  groundObject,
+  options = {}
+) {
+
+  const {
+    triggerDistance = 300,
+    chaseSpeed = 180,
+    direction = -1
+  } = options;
+
+  const rat = scene.physics.add.sprite(
+    x,
+    y,
+    'sewerRatEat01'
+  );
+
+  rat.setDepth(18);
+  rat.setDisplaySize(120, 90);
+
+  rat.health = 2;
+  rat.isDead = false;
+  rat.state = 'eating';
+  rat.ratType = 'eating';
+
+  rat.spawnX = x;
+  rat.triggerDistance = triggerDistance;
+  rat.chaseSpeed = chaseSpeed;
+  rat.direction = direction;
+
+  if (!scene.anims.exists('sewerRatEat')) {
+    scene.anims.create({
+      key: 'sewerRatEat',
+      frames: [
+        { key: 'sewerRatEat01' },
+        { key: 'sewerRatEat02' }
+      ],
+      frameRate: 4,
+      repeat: -1
+    });
+  }
+
+  if (!scene.anims.exists('sewerRatRun')) {
+    scene.anims.create({
+      key: 'sewerRatRun',
+      frames: [
+        { key: 'sewerRatRun01' },
+        { key: 'sewerRatRun02' }
+      ],
+      frameRate: 8,
+      repeat: -1
+    });
+  }
+
+  rat.play('sewerRatEat');
+
+  if (groundObject) {
+    scene.physics.add.collider(rat, groundObject);
+  }
+
+  scene.physics.add.overlap(player, rat, hurtPlayer, null, scene);
+  scene.physics.add.overlap(bullets, rat, hitSewerRat, null, scene);
+
+  sewerRats.push(rat);
+
+  return rat;
+}
+// =========================
+// UPDATE SEWER RAT
+// =========================
+function updateSewerRat(scene, rat) {
+
+  if (!rat || !rat.active || rat.isDead) {
+    return;
+  }
+
+  const distanceToPlayer = Math.abs(player.x - rat.spawnX);
+
+  // Pipe eyes blinking
+  if (rat.state === 'hidden') {
+
+    if (scene.time.now >= rat.blinkTimer) {
+      rat.blinkFrame = rat.blinkFrame === 0 ? 1 : 0;
+
+      rat.ambushBackground.setTexture(
+        rat.blinkFrame === 0
+          ? 'sewerRatAmbush01'
+          : 'sewerRatAmbush02'
+      );
+
+      rat.ambushBackground.setDisplaySize(180, 180);
+      rat.blinkTimer = scene.time.now + 450;
+    }
+
+    if (distanceToPlayer <= rat.triggerDistance) {
+      rat.state = 'jumping';
+
+      rat.ambushBackground.setTexture('sewerRatAmbush03');
+      rat.ambushBackground.setDisplaySize(180, 180);
+
+      rat.releaseAt = scene.time.now + 350;
+    }
+
+    return;
+  }
+
+  // Brief rat-jumping-out frame
+  if (rat.state === 'jumping') {
+
+    if (scene.time.now >= rat.releaseAt) {
+      rat.state = 'chasing';
+
+            rat.ambushBackground.setTexture('sewerRatAmbush01');
+      rat.ambushBackground.setVisible(true);
+
+      rat.body.enable = true;
+      rat.setActive(true);
+      rat.setVisible(true);
+      rat.setPosition(rat.spawnX, rat.groundY);
+      rat.setDisplaySize(110, 80);
+      rat.play('sewerRatRun');
+    }
+
+    return;
+  }
+
+  // Eating rat waits until approached
+  if (rat.state === 'eating') {
+
+    rat.setVelocityX(0);
+
+    if (distanceToPlayer <= rat.triggerDistance) {
+      rat.state = 'chasing';
+      rat.play('sewerRatRun');
+    }
+
+    return;
+  }
+
+  // Both rat types chase once activated
+  if (rat.state === 'chasing') {
+
+    if (player.x < rat.x) {
+      rat.direction = -1;
+      rat.setFlipX(false);
+    } else {
+      rat.direction = 1;
+      rat.setFlipX(true);
+    }
+
+    rat.setVelocityX(rat.chaseSpeed * rat.direction);
+  }
+}
+// =========================
 // SPAWN SEWER SLIME DROP HAZARD
 // =========================
 function spawnSewerSlimeDrop(scene, x, y, options = {}) {
@@ -3341,12 +3651,12 @@ function spawnSewerSlimeDrop(scene, x, y, options = {}) {
   // Permanent ceiling glob
   const baseGlob = scene.add.image(x, y, 'sewerSlimeDrop01');
   baseGlob.setDepth(35);
-  baseGlob.setDisplaySize(55, 55);
+  baseGlob.setDisplaySize(140, 140);
 
   // Warning overlay
   const warning = scene.add.image(x, y, 'sewerSlimeDrop02');
   warning.setDepth(36);
-  warning.setDisplaySize(55, 55);
+  warning.setDisplaySize(140, 140);
   warning.setVisible(false);
 
   // Falling damaging drop
@@ -3357,7 +3667,7 @@ function spawnSewerSlimeDrop(scene, x, y, options = {}) {
   );
 
   fallingDrop.setDepth(37);
-    fallingDrop.setDisplaySize(35, 60);
+    fallingDrop.setDisplaySize(80, 120);
   fallingDrop.body.allowGravity = false;
    fallingDrop.disableBody(true, true);
 
@@ -3427,8 +3737,21 @@ function updateSewerSlimeDrop(scene, hazard) {
         true,
         true
       );
+      hazard.fallingDrop.setTexture('sewerSlimeDrop03');
+      hazard.fallingDrop.setActive(true);
+      hazard.fallingDrop.setVisible(true);
+      hazard.fallingDrop.setDepth(37);
+      hazard.fallingDrop.setDisplaySize(140, 180);
 
-      hazard.fallingDrop.setDisplaySize(35, 60);
+      hazard.fallingDrop.body.setSize(
+        hazard.fallingDrop.width * 0.35,
+        hazard.fallingDrop.height * 0.55
+      );
+
+      hazard.fallingDrop.body.setOffset(
+        hazard.fallingDrop.width * 0.325,
+        hazard.fallingDrop.height * 0.25
+      );
       hazard.fallingDrop.setVelocity(0, hazard.dropSpeed);
     }
 
@@ -3645,19 +3968,6 @@ function createSewerScene() {
   sewerExitDoor.body.immovable = true;
 
   // =========================
-  // SEWER SLIME DROP HAZARDS
-  // =========================
-  sewerSlimeDrops = [];
-
-  spawnSewerSlimeDrop(this, 1800, 80);
-  spawnSewerSlimeDrop(this, 4100, 80, {
-    cooldownDuration: 1800
-  });
-  spawnSewerSlimeDrop(this, 7900, 80, {
-    warningDuration: 400,
-    cooldownDuration: 1600
-  });
-  // =========================
   // PLAYER
   // =========================
   player = createPlayer(this, 150, 300);
@@ -3708,6 +4018,72 @@ function createSewerScene() {
     this.physics.add.collider(player, p, null, oneWayPlatformCheck, this);
     this.physics.add.collider(casings, p, null, oneWayPlatformCheck, this);
   });
+  // =========================
+  // SEWER HABIT RATS
+  // Platforms now have physics bodies
+  // =========================
+  sewerRats = [];
+
+   spawnSewerAmbushRat(
+    this,
+    2150,
+    260,,
+    400,
+    sewerPlatform06
+  );
+
+  spawnSewerEatingRat(
+    this,
+    4300,
+    400,
+    sewerPlatform13
+  );
+  // Additional pipe ambush rats
+  spawnSewerAmbushRat(
+    this,
+    3400,
+    190,
+    400,
+    sewerPlatform10,
+    {
+      triggerDistance: 220,
+      chaseSpeed: 190
+    }
+  );
+
+  spawnSewerAmbushRat(
+    this,
+    5800,
+    190,
+    400,
+    sewerPlatform19,
+    {
+      triggerDistance: 220,
+      chaseSpeed: 200
+    }
+  );
+
+  spawnSewerAmbushRat(
+    this,
+    7750,
+    190,
+    400,
+    sewerPlatform25,
+    {
+      triggerDistance: 240,
+      chaseSpeed: 210
+    }
+  );
+    spawnSewerEatingRat(
+    this,
+    9400,
+    400,
+    sewerPlatform29,
+    {
+      triggerDistance: 325,
+      chaseSpeed: 200
+    }
+  );
 
   // Moving platform gets its own collider (not one-way, since it's a
   // single jump-across rather than a stack to drop through) and is
@@ -3758,6 +4134,9 @@ function updateSewerScene() {
     player.setTexture('playerDead');
       sewerSlimeDrops.forEach(hazard => {
     updateSewerSlimeDrop(this, hazard);
+  });
+    sewerRats.forEach(rat => {
+    updateSewerRat(this, rat);
   });
     updateMovingPlatform13(this);
     return;
@@ -3813,7 +4192,15 @@ function updateSewerScene() {
 
   cullOffscreenBullets(this);
   updateActiveUpgrade(this);
-  settleCasings();
+    settleCasings();
+
+   sewerSlimeDrops.forEach(hazard => {
+    updateSewerSlimeDrop(this, hazard);
+  });
+
+  sewerRats.forEach(rat => {
+    updateSewerRat(this, rat);
+  });
 
   updateMovingPlatform13(this);
 }
