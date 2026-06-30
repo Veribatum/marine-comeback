@@ -428,6 +428,10 @@ function preload() {
 
   this.load.image('sewerRatEat01', 'assets/sewer_rat_eat01.png');
   this.load.image('sewerRatEat02', 'assets/sewer_rat_eat02.png');
+    this.load.image('sewerRatHit', 'assets/sewer_rat_hit.png');
+  this.load.image('sewerRatDeath', 'assets/sewer_rat_death.png');
+  this.load.image('sewerRatPile', 'assets/sewer_rat_pile.png');
+    this.load.image('sewerExit', 'assets/sewer_exit.png');
 }
 
 
@@ -927,11 +931,11 @@ function spawnSlime(
   // Smaller, higher body lets the visible slime sit lower on the street.
   if (currentLevel === 'level1' && !bodyConfig) {
     bodyConfig = {
-      width: 0.65,
-      height: 0.45,
-      offsetX: 0.175,
-      offsetY: 0.10
-    };
+  width: 0.65,
+  height: 0.75,
+  offsetX: 0.175,
+  offsetY: 0.02
+};
   }
     if (bodyConfig) {
     slimeObj.body.setSize(
@@ -3380,24 +3384,54 @@ function hitSewerRat(objectA, objectB) {
   ratObject.health =
     bulletObject.isPowerShot ? 0 : ratObject.health - 1;
 
-  ratObject.setTint(0xff4444);
+   const hitEffect = ratObject.scene.add.image(
+    ratObject.x,
+    ratObject.y,
+    'sewerRatHit'
+  );
 
-  ratObject.scene.time.delayedCall(100, () => {
-    if (ratObject.active) {
-      ratObject.clearTint();
-    }
+  hitEffect.setDepth(ratObject.depth + 1);
+  hitEffect.setDisplaySize(
+    ratObject.displayWidth,
+    ratObject.displayHeight
+  );
+  hitEffect.setFlipX(ratObject.flipX);
+
+  ratObject.scene.time.delayedCall(120, () => {
+    hitEffect.destroy();
   });
-
   if (ratObject.health > 0) {
     return;
   }
 
-  ratObject.isDead = true;
+   ratObject.isDead = true;
+  ratObject.setVelocity(0, 0);
+
+  const deathEffect = ratObject.scene.add.image(
+    ratObject.x,
+    ratObject.y,
+    'sewerRatDeath'
+  );
+
+  deathEffect.setDepth(ratObject.depth + 1);
+  deathEffect.setDisplaySize(
+    ratObject.displayWidth,
+    ratObject.displayHeight
+  );
+  deathEffect.setFlipX(ratObject.flipX);
+
   ratObject.disableBody(true, true);
 
+  // Keep the empty pipe after an ambush rat dies.
   if (ratObject.ambushBackground) {
-    ratObject.ambushBackground.setVisible(false);
+    ratObject.ambushBackground
+      .setTexture('sewerRatAmbush01')
+      .setVisible(true);
   }
+
+  ratObject.scene.time.delayedCall(500, () => {
+    deathEffect.destroy();
+  });
 
   addScore(150);
 }
@@ -3503,6 +3537,17 @@ function spawnSewerEatingRat(
 
   rat.setDepth(18);
   rat.setDisplaySize(120, 90);
+    const leftoverPile = scene.add.image(
+    x,
+    y,
+    'sewerRatPile'
+  );
+
+  leftoverPile.setDepth(17);
+  leftoverPile.setDisplaySize(120, 90);
+  leftoverPile.setVisible(false);
+
+  rat.leftoverPile = leftoverPile;
 
   rat.health = 2;
   rat.isDead = false;
@@ -3617,6 +3662,13 @@ function updateSewerRat(scene, rat) {
 
     if (distanceToPlayer <= rat.triggerDistance) {
       rat.state = 'chasing';
+
+      if (rat.leftoverPile) {
+        rat.leftoverPile
+          .setPosition(rat.x, rat.y)
+          .setVisible(true);
+      }
+
       rat.play('sewerRatRun');
     }
 
@@ -3961,9 +4013,10 @@ function createSewerScene() {
 
   // Exit door - same overlap-trigger pattern as apartmentDoor, just
   // pointed at whatever comes after the sewer (stubbed for now).
-  sewerExitDoor = this.physics.add.sprite(10700, 410, 'apartmentDoor');
-  sewerExitDoor.setScale(1);
-  sewerExitDoor.setDepth(10);
+ sewerExitDoor = this.physics.add.sprite(10700, 410, 'sewerExit');
+sewerExitDoor.setScale(0.35);
+sewerExitDoor.setDepth(10);
+sewerExitDoor.setOrigin(0.5, 1);
   sewerExitDoor.body.allowGravity = false;
   sewerExitDoor.body.immovable = true;
 
@@ -4027,7 +4080,7 @@ function createSewerScene() {
    spawnSewerAmbushRat(
     this,
     2150,
-    260,,
+    260,
     400,
     sewerPlatform06
   );
@@ -4106,7 +4159,25 @@ function createSewerScene() {
   this.physics.world.setBounds(0, -450, LEVEL_SEWER_WIDTH, GAME_HEIGHT + 750);
   this.cameras.main.setBounds(0, -450, LEVEL_SEWER_WIDTH, GAME_HEIGHT + 450);
   this.cameras.main.startFollow(player);
+  // =========================
+  // GAME OVER SCREEN
+  // =========================
+  gameOverScreen = this.add.image(
+    GAME_WIDTH / 2,
+    GAME_HEIGHT / 2,
+    'gameOverScreen'
+  );
 
+  gameOverScreen.setScrollFactor(0);
+  gameOverScreen.setDepth(5000);
+  gameOverScreen.setVisible(false);
+  gameOverScreen.setInteractive();
+
+  gameOverScreen.on('pointerdown', () => {
+    if (playerLives <= 0) {
+      location.reload();
+    }
+  });
   // =========================
   // HUD / CONTROLS
   // =========================
