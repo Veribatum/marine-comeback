@@ -4071,6 +4071,104 @@ sewerExitDoor.setOrigin(0.5, 1);
     this.physics.add.collider(player, p, null, oneWayPlatformCheck, this);
     this.physics.add.collider(casings, p, null, oneWayPlatformCheck, this);
   });
+    // =========================
+  // SEWER ENEMIES
+  // =========================
+  slimes = [];
+  junkFoodGoblins = [];
+  jfgoblinCans = this.physics.add.group();
+
+  // -------------------------
+  // SEWER SLIMES
+  // -------------------------
+  spawnSlime(
+    this,
+    1050,
+    300,
+    sewerPlatform03,
+    900,
+    1100,
+    1
+  );
+
+  spawnSlime(
+    this,
+    3000,
+    400,
+    sewerPlatform08,
+    2860,
+    3040,
+    -1
+  );
+
+  spawnSlime(
+    this,
+    4850,
+    320,
+    sewerPlatform16,
+    4740,
+    4960,
+    1
+  );
+
+  spawnSlime(
+    this,
+    6300,
+    380,
+    sewerPlatform21,
+    6200,
+    6400,
+    -1
+  );
+
+  spawnSlime(
+    this,
+    8950,
+    280,
+    sewerPlatform28,
+    8840,
+    9060,
+    1
+  );
+
+  // -------------------------
+  // SEWER JUNK FOOD GOBLINS
+  // -------------------------
+
+  // Stationary throwing goblin
+  spawnJunkFoodGoblin(
+    this,
+    3500,
+    210,
+    {
+      canThrow: true,
+      parallaxFactor: 1
+    }
+  );
+
+  // Stationary throwing goblin
+  spawnJunkFoodGoblin(
+    this,
+    5750,
+    190,
+    {
+      canThrow: true,
+      parallaxFactor: 1
+    }
+  );
+
+  // Patrolling goblin on the long platform
+  spawnJunkFoodGoblin(
+    this,
+    7750,
+    490,
+    {
+      patrolLeft: 7580,
+      patrolRight: 7920,
+      canThrow: true,
+      parallaxFactor: 1
+    }
+  );
   // =========================
   // SEWER HABIT RATS
   // Platforms now have physics bodies
@@ -4206,13 +4304,21 @@ function updateSewerScene() {
       sewerSlimeDrops.forEach(hazard => {
     updateSewerSlimeDrop(this, hazard);
   });
-    sewerRats.forEach(rat => {
+      sewerRats.forEach(rat => {
     updateSewerRat(this, rat);
   });
-    updateMovingPlatform13(this);
-    return;
-  }
 
+  slimes.forEach(slime => {
+    patrolSlime(slime, 60);
+  });
+
+  junkFoodGoblins.forEach(goblin => {
+    patrolJunkFoodGoblin(goblin, 30);
+    updateJunkFoodGoblinThrow(this, goblin);
+  });
+
+  updateMovingPlatform13(this);
+  }
   // MOVE LEFT / RIGHT
   if (cursors.left.isDown || moveLeft) {
     player.body.setVelocityX(-300);
@@ -4261,16 +4367,35 @@ function updateSewerScene() {
     firePlayerBullet(this);
   }
 
-  cullOffscreenBullets(this);
+    cullOffscreenBullets(this);
+
+  updateHomingBullets(
+    this,
+    [
+      ...slimes,
+      ...junkFoodGoblins,
+      ...sewerRats
+    ]
+  );
+
   updateActiveUpgrade(this);
-    settleCasings();
+  settleCasings();
 
    sewerSlimeDrops.forEach(hazard => {
     updateSewerSlimeDrop(this, hazard);
   });
 
-  sewerRats.forEach(rat => {
+    sewerRats.forEach(rat => {
     updateSewerRat(this, rat);
+  });
+
+  slimes.forEach(slime => {
+    patrolSlime(slime, 60);
+  });
+
+  junkFoodGoblins.forEach(goblin => {
+    patrolJunkFoodGoblin(goblin, 30);
+    updateJunkFoodGoblinThrow(this, goblin);
   });
 
   updateMovingPlatform13(this);
