@@ -432,6 +432,7 @@ function preload() {
   this.load.image('sewerRatDeath', 'assets/sewer_rat_death.png');
   this.load.image('sewerRatPile', 'assets/sewer_rat_pile.png');
     this.load.image('sewerExit', 'assets/sewer_exit.png');
+    this.load.image('sewerRatSkeleton', 'assets/sewer_rat_skeleton.png');
 }
 
 
@@ -495,7 +496,28 @@ function createPlayer(scene, x, y) {
 
   return p;
 }
+// =========================
+// SHARED: PLAYER BODY SIZE
+// =========================
+function setPlayerStandingBody() {
+  if (!player || !player.body || player.currentBodyState === 'standing') {
+    return;
+  }
 
+  player.body.setSize(360, 520);
+  player.body.setOffset(240, 500);
+  player.currentBodyState = 'standing';
+}
+
+function setPlayerCrouchBody() {
+  if (!player || !player.body || player.currentBodyState === 'crouching') {
+    return;
+  }
+
+  player.body.setSize(360, 330);
+  player.body.setOffset(240, 690);
+  player.currentBodyState = 'crouching';
+}
 
 // =========================
 // SHARED: CREATE FADE SCREEN
@@ -522,61 +544,131 @@ function createFadeScreen(scene) {
   fadeScreen.setDepth(7000);
   fadeScreen.setAlpha(0);
 }
+// =========================
+// SHARED: CREATE GAME OVER SCREEN
+// =========================
+function createGameOverScreen(scene) {
+  gameOverScreen = scene.add.image(
+    GAME_WIDTH / 2,
+    GAME_HEIGHT / 2,
+    'gameOverScreen'
+  );
 
+  gameOverScreen.setScrollFactor(0);
+  gameOverScreen.setDepth(9000);
+  gameOverScreen.setVisible(false);
+  gameOverScreen.setInteractive();
+
+  gameOverScreen.on('pointerdown', () => {
+    if (playerLives <= 0) {
+      location.reload();
+    }
+  });
+}
 
 // =========================
 // SHARED: CREATE HUD
 // =========================
 function createHUD(scene) {
 
-  // LEFT CONTROL PLATE
+    // LEFT CONTROL PLATE
   scene.add.image(170, 590, 'controlPlate')
     .setScrollFactor(0)
     .setDepth(100)
-    .setScale(0.60);
+    .setScale(0.72);
 
   // RIGHT CONTROL PLATE
   scene.add.image(1120, 590, 'controlPlate')
     .setScrollFactor(0)
     .setDepth(100)
-    .setScale(0.60)
+    .setScale(0.72)
     .setFlipX(true);
 
   // LEFT BUTTON
-  scene.leftButton = scene.add.image(145, 555, 'leftUp')
+  scene.leftButton = scene.add.image(138, 548, 'leftUp')
     .setScrollFactor(0)
     .setDepth(101)
-    .setScale(0.50)
-    .setInteractive();
+    .setScale(0.66);
+
+  scene.leftButton.setInteractive(
+  new Phaser.Geom.Rectangle(
+    -40,
+    -40,
+    scene.leftButton.width + 80,
+    scene.leftButton.height + 80
+  ),
+  Phaser.Geom.Rectangle.Contains
+);
 
   // RIGHT BUTTON
-  scene.rightButton = scene.add.image(210, 555, 'rightUp')
+  scene.rightButton = scene.add.image(217, 548, 'rightUp')
     .setScrollFactor(0)
     .setDepth(101)
-    .setScale(0.50)
-    .setInteractive();
+    .setScale(0.66);
+
+  scene.rightButton.setInteractive(
+  new Phaser.Geom.Rectangle(
+    -40,
+    -40,
+    scene.rightButton.width + 80,
+    scene.rightButton.height + 80
+  ),
+  Phaser.Geom.Rectangle.Contains
+);
 
   // CROUCH BUTTON
-  scene.crouchButton = scene.add.image(175, 615, 'crouchUp')
+  scene.crouchButton = scene.add.image(175, 622, 'crouchUp')
     .setScrollFactor(0)
     .setDepth(101)
-    .setScale(0.50)
-    .setInteractive();
+    .setScale(0.64);
 
-  // FIRE BUTTON
-  scene.fireButton = scene.add.image(1140, 560, 'fireUp')
-    .setScrollFactor(0)
-    .setDepth(101)
-    .setScale(0.60)
-    .setInteractive();
+  scene.crouchButton.setInteractive(
+  new Phaser.Geom.Rectangle(
+    -40,
+    -40,
+    scene.crouchButton.width + 80,
+    scene.crouchButton.height + 80
+  ),
+  Phaser.Geom.Rectangle.Contains
+);
 
-  // JUMP BUTTON
-  scene.jumpButton = scene.add.image(1080, 605, 'jumpUp')
-    .setScrollFactor(0)
-    .setDepth(101)
-    .setScale(0.65)
-    .setInteractive();
+// FIRE BUTTON — right side of plate
+scene.fireButton = scene.add.image(1155, 585, 'fireUp')
+  .setScrollFactor(0)
+  .setDepth(101)
+  .setScale(0.10);
 
+// Make Fire slightly taller after the object exists
+scene.fireButton.setDisplaySize(
+  scene.fireButton.displayWidth * 1.12,
+  scene.fireButton.displayHeight * 1.18
+);
+
+scene.fireButton.setInteractive(
+  new Phaser.Geom.Rectangle(
+    -70,
+    -70,
+    scene.fireButton.width + 140,
+    scene.fireButton.height + 140
+  ),
+  Phaser.Geom.Rectangle.Contains
+);
+
+// JUMP BUTTON — left side of plate
+scene.jumpButton = scene.add.image(1070, 585, 'jumpUp')
+  .setScrollFactor(0)
+  .setDepth(101)
+  .setScale(0.10);
+
+scene.jumpButton.setInteractive(
+  new Phaser.Geom.Rectangle(
+    -70,
+    -70,
+    scene.jumpButton.width + 140,
+    scene.jumpButton.height + 140
+  ),
+  Phaser.Geom.Rectangle.Contains
+);
   // =========================
   // TOUCH CONTROL HANDLERS
   // =========================
@@ -1686,10 +1778,10 @@ function activateRandomUpgrade(scene) {
     upgradeText.destroy();
   }
 
-  upgradeText = scene.add.text(640, 30, labels[activeUpgrade], {
-    fontSize: '24px',
-    fill: '#ffff00'
-  });
+  upgradeText = scene.add.text(640, 115, labels[activeUpgrade], {
+  fontSize: '24px',
+  fill: '#ffff00'
+    });
   upgradeText.setScrollFactor(0);
   upgradeText.setDepth(101);
   upgradeText.setOrigin(0.5, 0);
@@ -1897,21 +1989,10 @@ function create() {
   apartmentDoor.body.immovable = true;
 
   this.physics.add.overlap(player, apartmentDoor, enterDoor, null, this);
-
-  // =========================
-  // GAME OVER SCREEN
-  // =========================
-  gameOverScreen = this.add.image(GAME_WIDTH / 2, GAME_HEIGHT / 2, 'gameOverScreen');
-  gameOverScreen.setScrollFactor(0);
-  gameOverScreen.setDepth(5000);
-  gameOverScreen.setVisible(false);
-  gameOverScreen.setInteractive();
-
-  gameOverScreen.on('pointerdown', () => {
-    if (playerLives <= 0) {
-      location.reload();
-    }
-  });
+// =========================
+// GAME OVER SCREEN
+// =========================
+createGameOverScreen(this);
 
   // =========================
   // HUD / CONTROLS
@@ -1991,6 +2072,11 @@ function update() {
   playerIsCrouching =
     (cursors.down.isDown || crouchPressed) &&
     player.body.blocked.down;
+      if (playerIsCrouching) {
+    setPlayerCrouchBody();
+  } else {
+    setPlayerStandingBody();
+  }
 
   if (playerIsCrouching) {
     player.body.setVelocityX(0);
@@ -2987,15 +3073,20 @@ function createLevel1() {
   this.physics.add.collider(player, building06ScaffoldPlatform, null, oneWayPlatformCheck, this);
   this.physics.add.collider(casings, building06ScaffoldPlatform);
 
-  // =========================
-  // HUD / CONTROLS
-  // =========================
-  createHUD(this);
+ // =========================
+// GAME OVER SCREEN
+// =========================
+createGameOverScreen(this);
 
-  // =========================
-  // LEVEL TRANSITION FADE SCREEN
-  // =========================
-  createFadeScreen(this);
+// =========================
+// HUD / CONTROLS
+// =========================
+createHUD(this);
+
+// =========================
+// LEVEL TRANSITION FADE SCREEN
+// =========================
+createFadeScreen(this);
 }
 
 
@@ -3035,6 +3126,11 @@ function updateLevel1() {
   playerIsCrouching =
     (cursors.down.isDown || crouchPressed) &&
     player.body.blocked.down;
+      if (playerIsCrouching) {
+    setPlayerCrouchBody();
+  } else {
+    setPlayerStandingBody();
+  }
 
   if (playerIsCrouching) {
     player.body.setVelocityX(0);
@@ -3604,6 +3700,29 @@ function updateSewerRat(scene, rat) {
   if (!rat || !rat.active || rat.isDead) {
     return;
   }
+    // Rat fell into the toxic sludge
+  if (rat.y >= TOXIC_WATER_Y - 10) {
+    rat.isDead = true;
+    rat.setVelocity(0, 0);
+
+    const skeleton = scene.add.image(
+      rat.x,
+      TOXIC_WATER_Y - 5,
+      'sewerRatSkeleton'
+    );
+
+    skeleton.setDepth(12);
+    skeleton.setDisplaySize(110, 70);
+    skeleton.setFlipX(rat.flipX);
+
+    rat.disableBody(true, true);
+
+    scene.time.delayedCall(2500, () => {
+      skeleton.destroy();
+    });
+
+    return;
+  }
 
   const distanceToPlayer = Math.abs(player.x - rat.spawnX);
 
@@ -4061,9 +4180,13 @@ sewerExitDoor.setOrigin(0.5, 1);
     sewerPlatform25, sewerPlatform26, sewerPlatform27, sewerPlatform28,
     sewerPlatform29, sewerPlatform30, sewerPlatform31
   ];
-  allSewerPlatforms.forEach(p => {
+    allSewerPlatforms.forEach(p => {
     createSewerPlatformVisual(this, p);
   });
+
+  // Final platform visual sits too low against its collider.
+  // Move only the art up, not the actual hitbox.
+  sewerPlatform31.visual.y -= 35;
 
   createSewerPlatformVisual(this, movingPlatform13);
   allSewerPlatforms.forEach(p => {
@@ -4072,65 +4195,112 @@ sewerExitDoor.setOrigin(0.5, 1);
     this.physics.add.collider(casings, p, null, oneWayPlatformCheck, this);
   });
     // =========================
-  // SEWER ENEMIES
+  // SEWER ENEMIES / PICKUPS
   // =========================
   slimes = [];
   junkFoodGoblins = [];
+  pickups = [];
+  activeUpgrade = null;
+  if (upgradeText) { upgradeText.destroy(); upgradeText = null; }
   jfgoblinCans = this.physics.add.group();
 
-  // -------------------------
-  // SEWER SLIMES
-  // -------------------------
-  spawnSlime(
-    this,
-    1050,
-    300,
-    sewerPlatform03,
-    900,
-    1100,
-    1
-  );
+// -------------------------
+// SEWER SLIMES
+// -------------------------
+spawnSlime(
+  this,
+  1050,
+  280,
+  sewerPlatform03,
+  900,
+  1100,
+  1,
+  {
+    width: 0.70,
+    height: 0.55,
+    offsetX: 0.15,
+    offsetY: 0.05
+  }
+);
 
-  spawnSlime(
-    this,
-    3000,
-    400,
-    sewerPlatform08,
-    2860,
-    3040,
-    -1
-  );
+spawnSlime(
+  this,
+  3000,
+  380,
+  sewerPlatform08,
+  2860,
+  3040,
+  -1,
+  {
+    width: 0.70,
+    height: 0.55,
+    offsetX: 0.15,
+    offsetY: 0.05
+  }
+);
 
-  spawnSlime(
-    this,
-    4850,
-    320,
-    sewerPlatform16,
-    4740,
-    4960,
-    1
-  );
+spawnSlime(
+  this,
+  4850,
+  300,
+  sewerPlatform16,
+  4740,
+  4960,
+  1,
+  {
+    width: 0.70,
+    height: 0.55,
+    offsetX: 0.15,
+    offsetY: 0.05
+  }
+);
 
-  spawnSlime(
-    this,
-    6300,
-    380,
-    sewerPlatform21,
-    6200,
-    6400,
-    -1
-  );
+spawnSlime(
+  this,
+  6300,
+  360,
+  sewerPlatform21,
+  6200,
+  6400,
+  -1,
+  {
+    width: 0.70,
+    height: 0.55,
+    offsetX: 0.15,
+    offsetY: 0.05
+  }
+);
 
-  spawnSlime(
-    this,
-    8950,
-    280,
-    sewerPlatform28,
-    8840,
-    9060,
-    1
-  );
+spawnSlime(
+  this,
+  8950,
+  260,
+  sewerPlatform28,
+  8840,
+  9060,
+  1,
+  {
+    width: 0.70,
+    height: 0.55,
+    offsetX: 0.15,
+    offsetY: 0.05
+  }
+);
+// -------------------------
+// SEWER PICKUPS
+// -------------------------
 
+// Early mercy health after first climbing/slime section
+spawnPickup(this, 1350, 230, 'health');
+
+// Route split reward — upper route power-up
+spawnPickup(this, 3050, 270, 'upgrade');
+
+// Mid-level health before moving-platform / rat section
+spawnPickup(this, 6300, 410, 'health');
+
+// Late health before final climb
+spawnPickup(this, 8950, 310, 'health');
   // -------------------------
   // SEWER JUNK FOOD GOBLINS
   // -------------------------
@@ -4173,68 +4343,75 @@ sewerExitDoor.setOrigin(0.5, 1);
   // SEWER HABIT RATS
   // Platforms now have physics bodies
   // =========================
-  sewerRats = [];
+ // First ambush — rear of sewerPlatform06
+ sewerRats = [];
+spawnSewerAmbushRat(
+  this,
+  2270,
+  400,
+  400,
+  sewerPlatform06,
+  {
+    triggerDistance: 180,
+    chaseSpeed: 180
+  }
+);
 
-   spawnSewerAmbushRat(
-    this,
-    2150,
-    260,
-    400,
-    sewerPlatform06
-  );
+// Second ambush — rear of sewerPlatform10
+spawnSewerAmbushRat(
+  this,
+  3440,
+  400,
+  400,
+  sewerPlatform10,
+  {
+    triggerDistance: 170,
+    chaseSpeed: 190
+  }
+);
 
-  spawnSewerEatingRat(
-    this,
-    4300,
-    400,
-    sewerPlatform13
-  );
-  // Additional pipe ambush rats
-  spawnSewerAmbushRat(
-    this,
-    3400,
-    190,
-    400,
-    sewerPlatform10,
-    {
-      triggerDistance: 220,
-      chaseSpeed: 190
-    }
-  );
+// Third ambush — rear of sewerPlatform19
+spawnSewerAmbushRat(
+  this,
+  5820,
+  400,
+  400,
+  sewerPlatform19,
+  {
+    triggerDistance: 170,
+    chaseSpeed: 200
+  }
+);
 
-  spawnSewerAmbushRat(
-    this,
-    5800,
-    190,
-    400,
-    sewerPlatform19,
-    {
-      triggerDistance: 220,
-      chaseSpeed: 200
-    }
-  );
+// Fourth ambush — rear of sewerPlatform25
+spawnSewerAmbushRat(
+  this,
+  7910,
+  400,
+  400,
+  sewerPlatform25,
+  {
+    triggerDistance: 190,
+    chaseSpeed: 210
+  }
+);
+spawnSewerEatingRat(
+  this,
+  4300,
+  400,
+  sewerPlatform13
+);
 
-  spawnSewerAmbushRat(
-    this,
-    7750,
-    190,
-    400,
-    sewerPlatform25,
-    {
-      triggerDistance: 240,
-      chaseSpeed: 210
-    }
-  );
-    spawnSewerEatingRat(
-    this,
-    9400,
-    400,
-    sewerPlatform29,
-    {
-      triggerDistance: 325,
-      chaseSpeed: 200
-    }
-  );
+spawnSewerEatingRat(
+  this,
+  9400,
+  400,
+  sewerPlatform29,
+  {
+    triggerDistance: 325,
+    chaseSpeed: 200
+  }
+);
 
   // Moving platform gets its own collider (not one-way, since it's a
   // single jump-across rather than a stack to drop through) and is
@@ -4257,25 +4434,10 @@ sewerExitDoor.setOrigin(0.5, 1);
   this.physics.world.setBounds(0, -450, LEVEL_SEWER_WIDTH, GAME_HEIGHT + 750);
   this.cameras.main.setBounds(0, -450, LEVEL_SEWER_WIDTH, GAME_HEIGHT + 450);
   this.cameras.main.startFollow(player);
-  // =========================
-  // GAME OVER SCREEN
-  // =========================
-  gameOverScreen = this.add.image(
-    GAME_WIDTH / 2,
-    GAME_HEIGHT / 2,
-    'gameOverScreen'
-  );
-
-  gameOverScreen.setScrollFactor(0);
-  gameOverScreen.setDepth(5000);
-  gameOverScreen.setVisible(false);
-  gameOverScreen.setInteractive();
-
-  gameOverScreen.on('pointerdown', () => {
-    if (playerLives <= 0) {
-      location.reload();
-    }
-  });
+// =========================
+// GAME OVER SCREEN
+// =========================
+createGameOverScreen(this);
   // =========================
   // HUD / CONTROLS
   // =========================
@@ -4318,7 +4480,9 @@ function updateSewerScene() {
   });
 
   updateMovingPlatform13(this);
-  }
+  return;
+}
+
   // MOVE LEFT / RIGHT
   if (cursors.left.isDown || moveLeft) {
     player.body.setVelocityX(-300);
@@ -4339,6 +4503,11 @@ function updateSewerScene() {
   playerIsCrouching =
     (cursors.down.isDown || crouchPressed) &&
     player.body.blocked.down;
+      if (playerIsCrouching) {
+    setPlayerCrouchBody();
+  } else {
+    setPlayerStandingBody();
+  }
 
   if (playerIsCrouching) {
     player.body.setVelocityX(0);
@@ -4379,6 +4548,7 @@ function updateSewerScene() {
   );
 
   updateActiveUpgrade(this);
+  pickups.forEach(p => updatePickup(this, p));
   settleCasings();
 
    sewerSlimeDrops.forEach(hazard => {
@@ -4419,7 +4589,7 @@ function updateMovingPlatform13(scene) {
     Math.sin(scene.time.now * movingPlatform13.bobSpeed) * (movingPlatform13.bobRange / 2);
   if (movingPlatform13.visual) {
     movingPlatform13.visual.x = movingPlatform13.x;
-    movingPlatform13.visual.y = movingPlatform13.y - 40;
+        movingPlatform13.visual.y = movingPlatform13.y - 75;
   }
   movingPlatform13.body.updateFromGameObject();
 }
