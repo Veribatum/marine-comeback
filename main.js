@@ -4245,7 +4245,13 @@ function createSewerScene() {
   sewerPlatform19 = this.add.rectangle(5800, 500, 220, 20, 0xff0000);
   sewerPlatform21 = this.add.rectangle(6300, 480, 240, 20, 0xff0000);
 
-  movingPlatform13 = this.add.rectangle(6800, 430, 180, 20, 0xff0000);
+ movingPlatform13 = this.add.rectangle(
+  6800,
+  430,
+  180,
+  32,
+  0xff0000
+);
   movingPlatform13.baseY = 430;
   movingPlatform13.bobRange = 180;
   movingPlatform13.bobSpeed = 0.0015;
@@ -4568,9 +4574,12 @@ spawnSewerEatingRat(
   // single jump-across rather than a stack to drop through) and is
   // NOT in allSewerPlatforms above, since its Y changes every frame
   // under update logic rather than sitting static.
-  this.physics.add.existing(movingPlatform13, true);
-  this.physics.add.collider(player, movingPlatform13, null, oneWayPlatformCheck, this);
-  this.physics.add.collider(casings, movingPlatform13, null, oneWayPlatformCheck, this);
+this.physics.add.existing(movingPlatform13, true);
+
+// Moving platform must use a normal solid collider.
+// The one-way platform check can fail while the platform moves vertically.
+this.physics.add.collider(player, movingPlatform13);
+this.physics.add.collider(casings, movingPlatform13);
 
   // Toxic water - instant death overlap, separate from every other
   // collider above.
