@@ -154,7 +154,7 @@ let currentLevel = 'apartment';
 // 'level1'
 // 'sewer'
 // 'level3'
-const DEBUG_START_LEVEL = 'level3';
+const DEBUG_START_LEVEL = 'apartment';
 
 // Optional spawn override.
 // Leave as null to use that level's normal start position.
