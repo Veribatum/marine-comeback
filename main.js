@@ -146,6 +146,20 @@ let jfgoblinCans;
 let junkFoodGoblins = [];
 
 let currentLevel = 'apartment';
+// =========================
+// DEBUG: START ON SPECIFIC LEVEL
+// =========================
+// Options:
+// 'apartment'
+// 'level1'
+// 'sewer'
+// 'level3'
+const DEBUG_START_LEVEL = 'level3';
+
+// Optional spawn override.
+// Leave as null to use that level's normal start position.
+const DEBUG_START_X = null;
+const DEBUG_START_Y = null;
 
 const IS_STANDALONE =
   window.matchMedia('(display-mode: standalone)').matches ||
@@ -177,7 +191,6 @@ const config = {
       debug: false
     }
   },
-
   scene: [
     {
       key: 'ApartmentScene',
@@ -190,14 +203,48 @@ const config = {
       create: createLevel1,
       update: updateLevel1
     },
-    {
+        {
       key: 'SewerScene',
       create: createSewerScene,
       update: updateSewerScene
+    },
+    {
+      key: 'Level3Scene',
+      create: createLevel3,
+      update: updateLevel3
     }
   ]
 };
+// =========================
+// DEBUG: GET START SCENE
+// =========================
+function getDebugStartSceneKey() {
 
+  if (DEBUG_START_LEVEL === 'level1') {
+    return 'Level1Scene';
+  }
+
+  if (DEBUG_START_LEVEL === 'sewer') {
+    return 'SewerScene';
+  }
+
+  if (DEBUG_START_LEVEL === 'level3') {
+    return 'Level3Scene';
+  }
+
+  return 'ApartmentScene';
+}
+
+
+// =========================
+// DEBUG: GET START POSITION
+// =========================
+function getDebugStartPosition(defaultX, defaultY) {
+  return {
+    x: DEBUG_START_X !== null ? DEBUG_START_X : defaultX,
+    y: DEBUG_START_Y !== null ? DEBUG_START_Y : defaultY
+  };
+}
 // =========================
 // START GAME
 // =========================
@@ -433,6 +480,40 @@ function preload() {
   this.load.image('sewerRatPile', 'assets/sewer_rat_pile.png');
     this.load.image('sewerExit', 'assets/sewer_exit.png');
     this.load.image('sewerRatSkeleton', 'assets/sewer_rat_skeleton.png');
+
+  // =========================
+// LEVEL 3 INDUSTRIAL DISTRICT ASSETS
+// =========================
+this.load.image('industrialSky', 'assets/industrial_skybox.png');
+
+this.load.image('industrialPlatform', 'assets/industrial_platform.png');
+this.load.image('industrialPlatform2', 'assets/industrial_platform2.png');
+this.load.image('industrialConveyor01', 'assets/industrial_conveyor01.png');
+this.load.image('industrialConveyor02', 'assets/industrial_conveyor02.png');
+this.load.image('industrialConveyor03', 'assets/industrial_conveyor03.png');
+// LEVEL 3 ENEMIES — RECLINER CHARGER
+this.load.image('chargerIdle01', 'assets/charger_idle01.png');
+this.load.image('chargerIdle02', 'assets/charger_idle02.png');
+this.load.image('chargerCharge01', 'assets/charger_charge01.png'); // pre-charge / shake
+this.load.image('chargerCharge02', 'assets/charger_charge02.png'); // actual charge
+
+// LEVEL 3 ENEMIES — JUNK FOOD DRONE
+this.load.image('junkFoodDroneIdle01', 'assets/junk_food_drone_idle01.png');
+this.load.image('junkFoodDroneIdle02', 'assets/junk_food_drone_idle02.png');
+this.load.image('junkFoodDroneHit', 'assets/junk_food_drone_hit.png');
+this.load.image('junkFoodDroneDeath', 'assets/junk_food_drone_death.png');
+this.load.image('junkFoodDroneProjectile', 'assets/junk_food_drone_projectile.png');
+this.load.image('industrialFloor', 'assets/industrial_floor.png');
+this.load.image('industrialExit', 'assets/industrial_exit.png');
+// LEVEL 3 BOSS — RECLINER TYRANT
+this.load.image('reclinerTyrantIdle01', 'assets/recliner_tyrant_idle01.png');
+this.load.image('reclinerTyrantIdle02', 'assets/recliner_tyrant_idle02.png');
+this.load.image('reclinerTyrantHurt', 'assets/recliner_tyrant_hurt.png');
+this.load.image('reclinerTyrantPhase3', 'assets/recliner_tyrant_phase3.png');
+this.load.image('reclinerTyrantDead', 'assets/recliner_tyrant_dead.png');
+this.load.image('reclinerTyrantDeath02', 'assets/recliner_tyrant_death02.png');
+this.load.image('reclinerTyrantEject', 'assets/recliner_tyrant_eject.png');
+this.load.image('reclinerTyrantHitEffect', 'assets/recliner_tyrant_hiteffct.png');
 }
 
 
@@ -1896,6 +1977,16 @@ function updateJunkFoodGoblinThrow(scene, goblin) {
 // CREATE (APARTMENT SCENE)
 // =========================
 function create() {
+    // =========================
+  // DEBUG LEVEL START
+  // =========================
+  const debugSceneKey = getDebugStartSceneKey();
+
+  if (debugSceneKey !== 'ApartmentScene') {
+    gameStarted = true;
+    this.scene.start(debugSceneKey);
+    return;
+  }
 
   // =========================
   // APARTMENT BACKGROUND
@@ -2305,8 +2396,18 @@ function hurtPlayer(playerObject, enemyObject) {
 
         playerObject.clearTint();
 
-        playerObject.x = 150;
-        playerObject.y = 300;
+                if (
+          currentLevel === 'level3' &&
+          (level3BossFightActive || level3Boss || level3BossCanTakeDamage)
+        ) {
+          resetLevel3BossFightAfterPlayerDeath(playerObject.scene);
+
+          playerObject.x = LEVEL3_BOSS_CHECKPOINT_X;
+          playerObject.y = LEVEL3_BOSS_CHECKPOINT_Y;
+        } else {
+          playerObject.x = 150;
+          playerObject.y = 300;
+        }
 
         playerObject.setVelocity(0, 0);
         healthBar.setTexture('health3');
@@ -2771,7 +2872,8 @@ function createLevel1() {
   // =========================
   // PLAYER
   // =========================
-  player = createPlayer(this, 150, 250);
+ const level1Start = getDebugStartPosition(150, 250);
+player = createPlayer(this, level1Start.x, level1Start.y);
 
   // =========================
   // GROUPS / INPUT
@@ -3275,6 +3377,54 @@ function updateParallaxObject(obj, scene) {
 // Sections 1-18 per the sewer level plan, placeholder rectangles,
 // toxic water kill-zone, and the level1EndSign -> fade -> SewerScene
 // trigger. Enemy population comes in a later pass.
+// =========================================================
+// LEVEL 3 — INDUSTRIAL DISTRICT / COMFORT FACTORY
+// =========================================================
+const LEVEL3_WIDTH = GAME_WIDTH * 10;
+
+let level3Floor;
+let level3ExitGate;
+
+let level3Platforms = [];
+let level3Conveyors = [];
+let level3EnemyMarkers = [];
+let level3PickupMarkers = [];
+let junkFoodDrones = [];
+let junkFoodDroneProjectiles;
+let reclinerChargers = [];
+
+// Level 3 boss arena
+let level3BossArenaTrigger;
+let level3Boss;
+let level3BossLeftWall;
+let level3BossRightWall;
+let level3BossFightActive = false;
+let level3BossDead = false;
+let level3BossHealthText;
+let level3BossHealthBarBack;
+let level3BossHealthBarFill;
+let level3BossIntroText;
+let level3BossGateStripes = [];
+
+let level3BossFrameIndex = 0;
+let level3BossNextFrameAt = 0;
+let level3BossPhase = 1;
+let level3BossCanTakeDamage = false;
+
+const LEVEL3_BOSS_MAX_HEALTH = 30;
+const LEVEL3_BOSS_ARENA_LEFT = 11525;
+const LEVEL3_BOSS_ARENA_RIGHT = 12740;
+const LEVEL3_BOSS_CHECKPOINT_X = 11380;
+const LEVEL3_BOSS_CHECKPOINT_Y = 300;
+
+const LEVEL3_PLATFORM_ART_OFFSET_Y = 28;
+const LEVEL3_CONVEYOR_ART_OFFSET_Y = -15;
+const LEVEL3_FLOOR_ART_Y = 545;
+const LEVEL3_PLATFORM_ANIM_MS = 220;
+
+// Level 3 placement tuning
+const LEVEL3_PICKUP_OFFSET_Y = -55;
+const LEVEL3_JFGOBLIN_OFFSET_Y = 55;
 
 const LEVEL_SEWER_WIDTH = GAME_WIDTH * 10; // 12800, matches LEVEL1_WIDTH scale per your call
 
@@ -4142,7 +4292,8 @@ sewerExitDoor.setOrigin(0.5, 1);
   // =========================
   // PLAYER
   // =========================
-  player = createPlayer(this, 150, 300);
+  const sewerStart = getDebugStartPosition(150, 300);
+player = createPlayer(this, sewerStart.x, sewerStart.y);
   // =========================
   // SEWER SLIME DROP HAZARDS
   // =========================
@@ -4593,10 +4744,1600 @@ function updateMovingPlatform13(scene) {
   }
   movingPlatform13.body.updateFromGameObject();
 }
+// =========================
+// LEVEL 3: INDUSTRIAL FLOATING PLATFORM
+// =========================
+function createLevel3Platform(scene, x, y, width, height = 20) {
+
+  // Invisible physics platform
+  const platform = scene.add.rectangle(x, y, width, height, 0xff0000);
+  platform.setVisible(false);
+
+  scene.physics.add.existing(platform, true);
+  scene.physics.add.collider(player, platform, null, oneWayPlatformCheck, scene);
+  scene.physics.add.collider(casings, platform, null, oneWayPlatformCheck, scene);
+
+    // Visible floating platform art
+  // Tiny platforms need their art slightly higher so the player
+  // does not look like he is floating above them.
+  const platformArtOffsetY =
+    width <= 170
+      ? LEVEL3_PLATFORM_ART_OFFSET_Y - 12
+      : LEVEL3_PLATFORM_ART_OFFSET_Y;
+
+  const visual = scene.add.image(
+    x,
+    y + platformArtOffsetY,
+    'industrialPlatform'
+  );
+  visual.setOrigin(0.5, 0.5);
+  visual.setDepth(5);
+
+  const scale = width / visual.width;
+  visual.setScale(scale);
+
+  // Store exact rendered size so frame 2 cannot jitter/pulse
+  platform.visual = visual;
+  platform.visualWidth = visual.displayWidth;
+  platform.visualHeight = visual.displayHeight;
+
+  // Thruster animation state
+  platform.frameIndex = 0;
+  platform.frameKeys = [
+    'industrialPlatform',
+    'industrialPlatform2'
+  ];
+  platform.nextFrameAt =
+    scene.time.now + Phaser.Math.Between(0, LEVEL3_PLATFORM_ANIM_MS);
+
+  level3Platforms.push(platform);
+
+  return platform;
+}
+// =========================
+// LEVEL 3: UPDATE FLOATING PLATFORM THRUSTERS
+// =========================
+function updateLevel3Platforms(scene) {
+
+  level3Platforms.forEach(platform => {
+    if (!platform || !platform.visual) {
+      return;
+    }
+
+    if (scene.time.now < platform.nextFrameAt) {
+      return;
+    }
+
+    platform.frameIndex =
+      (platform.frameIndex + 1) % platform.frameKeys.length;
+
+    platform.visual.setTexture(platform.frameKeys[platform.frameIndex]);
+
+    // Lock size after texture swap so frame 2 never shifts/jitters
+    platform.visual.setDisplaySize(
+      platform.visualWidth,
+      platform.visualHeight
+    );
+
+    platform.nextFrameAt = scene.time.now + LEVEL3_PLATFORM_ANIM_MS;
+  });
+}
+// =========================
+// LEVEL 3: INDUSTRIAL CONVEYOR
+// =========================
+function createLevel3Conveyor(scene, x, y, width, direction = 1) {
+
+  // Invisible physics conveyor
+  const conveyor = scene.add.rectangle(x, y, width, 24, 0x00aaff);
+  conveyor.setVisible(false);
+
+  scene.physics.add.existing(conveyor, true);
+  scene.physics.add.collider(player, conveyor);
+  scene.physics.add.collider(casings, conveyor);
+
+  conveyor.direction = direction;
+  conveyor.pushSpeed = 90;
+
+  // Visible conveyor art
+  const visual = scene.add.image(
+  x,
+  y + LEVEL3_CONVEYOR_ART_OFFSET_Y,
+  'industrialConveyor01'
+);
+  visual.setOrigin(0.5, 0.5);
+  visual.setDepth(6);
+
+  // One conveyor asset scaled to match collider width
+  const scale = width / visual.width;
+  visual.setScale(scale);
+
+  // direction 1 = right, direction -1 = left/flipped
+  visual.setFlipX(direction === -1);
+
+  conveyor.visual = visual;
+  conveyor.frameIndex = 0;
+  conveyor.nextFrameAt = 0;
+
+  level3Conveyors.push(conveyor);
+
+  return conveyor;
+}
+// =========================
+// LEVEL 3: INDUSTRIAL FLOOR VISUAL
+// =========================
+function createLevel3FloorVisual(scene) {
+
+  if (!scene.textures.exists('industrialFloor')) {
+    console.error('MISSING TEXTURE: industrialFloor / assets/industrial_floor.png');
+    return;
+  }
+
+  const sourceImage = scene.textures
+    .get('industrialFloor')
+    .getSourceImage();
+
+  // Floor collider center is y 500, height 40.
+  // Collider top is around y 480.
+  const floorArtTopY = 425;
+
+  // Adjust this if floor art is too tall/short.
+  const floorArtHeight = 225;
+
+  const floorScale = floorArtHeight / sourceImage.height;
+  const floorPieceWidth = sourceImage.width * floorScale;
+
+  // Overlap hides transparent edge/seam between floor pieces.
+  const floorOverlap = 24;
+  const stepX = floorPieceWidth - floorOverlap;
+
+  let x = 0;
+
+  while (x < LEVEL3_WIDTH + floorPieceWidth) {
+
+    const floorPiece = scene.add.image(
+      x,
+      floorArtTopY,
+      'industrialFloor'
+    );
+
+    floorPiece.setOrigin(0, 0);
+    floorPiece.setDepth(4);
+    floorPiece.setScale(floorScale);
+
+    x += stepX;
+  }
+}
+// =========================
+// LEVEL 3: UPDATE CONVEYORS
+// =========================
+function updateLevel3Conveyors(scene) {
+
+  const conveyorFrames = [
+    'industrialConveyor01',
+    'industrialConveyor02',
+    'industrialConveyor03'
+  ];
+
+  level3Conveyors.forEach(conveyor => {
+    if (!conveyor || !conveyor.body) {
+      return;
+    }
+
+    // Animate visible conveyor belt
+    if (conveyor.visual && scene.time.now >= conveyor.nextFrameAt) {
+      conveyor.frameIndex = (conveyor.frameIndex + 1) % conveyorFrames.length;
+      conveyor.visual.setTexture(conveyorFrames[conveyor.frameIndex]);
+      conveyor.visual.setFlipX(conveyor.direction === -1);
+      conveyor.nextFrameAt = scene.time.now + 120;
+    }
+
+    const playerBottom = player.body.bottom;
+    const conveyorTop = conveyor.body.top;
+
+    // Player must be actually standing ON this conveyor, not merely
+    // above it on a higher platform with the same X range.
+    const playerOnThisConveyor =
+      player.body.blocked.down &&
+      playerBottom >= conveyorTop - 8 &&
+      playerBottom <= conveyorTop + 18 &&
+      player.x > conveyor.x - conveyor.width / 2 &&
+      player.x < conveyor.x + conveyor.width / 2;
+
+    // Crouching should NOT cancel conveyor movement.
+    if (playerOnThisConveyor) {
+      player.x += conveyor.direction * conveyor.pushSpeed / 60;
+    }
+  });
+}
+// =========================
+// LEVEL 3: SPAWN JUNK FOOD DRONE
+// =========================
+function spawnJunkFoodDrone(scene, x, y, options = {}) {
+
+  const {
+    leftBound = x - 120,
+    rightBound = x + 120,
+    direction = 1,
+    shootCooldown = 1800
+  } = options;
+
+  const drone = scene.physics.add.sprite(x, y, 'junkFoodDroneIdle01');
+
+  drone.setDepth(32);
+  drone.setScale(0.14);
+  drone.body.allowGravity = false;
+
+  drone.health = 4;
+  drone.isDead = false;
+
+  drone.leftBound = leftBound;
+  drone.rightBound = rightBound;
+  drone.direction = direction;
+  drone.baseY = y;
+
+  drone.shootCooldown = shootCooldown;
+  drone.nextShotAt = scene.time.now + 1200;
+
+  drone.frameIndex = 0;
+  drone.nextFrameAt = 0;
+
+  drone.body.setSize(drone.width * 0.65, drone.height * 0.55);
+  drone.body.setOffset(drone.width * 0.175, drone.height * 0.225);
+
+  scene.physics.add.overlap(player, drone, hurtPlayer, null, scene);
+  scene.physics.add.overlap(bullets, drone, hitJunkFoodDrone, null, scene);
+
+  junkFoodDrones.push(drone);
+
+  return drone;
+}
 
 
 // =========================
-// ENTER SEWER EXIT (stub - destination scene TBD)
+// LEVEL 3: UPDATE JUNK FOOD DRONE
+// =========================
+function updateJunkFoodDrone(scene, drone) {
+
+  if (!drone || !drone.active || drone.isDead) {
+    return;
+  }
+
+  // Slow patrol, not bat-style aggressive movement
+  drone.x += drone.direction * 0.45;
+  drone.y = drone.baseY + Math.sin(scene.time.now * 0.004) * 8;
+
+  if (drone.x <= drone.leftBound) {
+    drone.direction = 1;
+  }
+
+  if (drone.x >= drone.rightBound) {
+    drone.direction = -1;
+  }
+
+  // Face player
+  drone.setFlipX(player.x > drone.x);
+
+  // Idle animation
+  if (scene.time.now >= drone.nextFrameAt) {
+    drone.frameIndex = drone.frameIndex === 0 ? 1 : 0;
+    drone.setTexture(
+      drone.frameIndex === 0
+        ? 'junkFoodDroneIdle01'
+        : 'junkFoodDroneIdle02'
+    );
+    drone.nextFrameAt = scene.time.now + 180;
+  }
+
+  // Shoot at player
+  const playerClose = Math.abs(player.x - drone.x) < 650;
+
+  if (playerClose && scene.time.now >= drone.nextShotAt) {
+    drone.nextShotAt = scene.time.now + drone.shootCooldown;
+    fireJunkFoodDroneProjectile(scene, drone);
+  }
+}
+
+
+// =========================
+// LEVEL 3: DRONE SHOOTS PROJECTILE
+// =========================
+function fireJunkFoodDroneProjectile(scene, drone) {
+
+  if (!junkFoodDroneProjectiles) {
+    return;
+  }
+
+  const projectile = junkFoodDroneProjectiles.create(
+    drone.x,
+    drone.y + 35,
+    'junkFoodDroneProjectile'
+  );
+
+  projectile.setDepth(31);
+projectile.setScale(0.08);
+projectile.body.allowGravity = false;
+
+// Smaller damage box than the cheese projectile art.
+// Keeps drone shots fair and prevents cheap edge hits.
+projectile.body.setSize(
+  projectile.width * 0.35,
+  projectile.height * 0.35
+);
+
+projectile.body.setOffset(
+  projectile.width * 0.325,
+  projectile.height * 0.325
+);
+  const dx = player.x - drone.x;
+  const dy = player.y - drone.y;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+
+ const speed = 280;
+
+  projectile.setVelocity(
+    (dx / dist) * speed,
+    (dy / dist) * speed
+  );
+  projectile.setRotation(
+  Phaser.Math.Angle.Between(
+    drone.x,
+    drone.y,
+    player.x,
+    player.y
+  )
+);
+
+
+  scene.physics.add.overlap(player, projectile, hurtPlayer, null, scene);
+
+  scene.time.delayedCall(4000, () => {
+    if (projectile && projectile.active) {
+      projectile.disableBody(true, true);
+    }
+  });
+}
+
+
+// =========================
+// LEVEL 3: HIT JUNK FOOD DRONE
+// =========================
+function hitJunkFoodDrone(objectA, objectB) {
+
+  let bulletObject;
+  let droneObject;
+
+  if (objectA.texture.key === 'bullet') {
+    bulletObject = objectA;
+    droneObject = objectB;
+  } else {
+    bulletObject = objectB;
+    droneObject = objectA;
+  }
+
+  if (!bulletObject.active || bulletObject.hasHit || droneObject.isDead) {
+    return;
+  }
+
+  bulletObject.hasHit = true;
+  bulletObject.disableBody(true, true);
+
+  droneObject.health = bulletObject.isPowerShot ? 0 : droneObject.health - 1;
+
+  const hitEffect = droneObject.scene.add.image(
+    droneObject.x,
+    droneObject.y,
+    'junkFoodDroneHit'
+  );
+
+  hitEffect.setDepth(droneObject.depth + 1);
+  hitEffect.setScale(droneObject.scaleX, droneObject.scaleY);
+  hitEffect.setFlipX(droneObject.flipX);
+
+  droneObject.scene.time.delayedCall(120, () => {
+    hitEffect.destroy();
+  });
+
+  if (droneObject.health > 0) {
+    return;
+  }
+
+  droneObject.isDead = true;
+  droneObject.body.setVelocity(0, 0);
+
+  const deathEffect = droneObject.scene.add.image(
+    droneObject.x,
+    droneObject.y,
+    'junkFoodDroneDeath'
+  );
+
+  deathEffect.setDepth(droneObject.depth + 1);
+  deathEffect.setScale(droneObject.scaleX, droneObject.scaleY);
+  deathEffect.setFlipX(droneObject.flipX);
+
+  droneObject.disableBody(true, true);
+
+  addScore(350);
+
+  droneObject.scene.time.delayedCall(500, () => {
+    deathEffect.destroy();
+  });
+}
+// =========================
+// LEVEL 3: SPAWN RECLINER CHARGER
+// =========================
+function spawnReclinerCharger(scene, triggerX, y, options = {}) {
+
+  const {
+    startOffset = 900,
+    stopOffset = 420,
+    exitOffset = -800
+  } = options;
+
+  const charger = scene.physics.add.sprite(
+    triggerX + startOffset,
+    y,
+    'chargerIdle01'
+  );
+
+  charger.setDepth(29);
+  charger.setScale(0.2);
+  charger.body.allowGravity = false;
+  charger.body.immovable = true;
+
+  charger.body.setSize(charger.width * 0.75, charger.height * 0.42);
+  charger.body.setOffset(charger.width * 0.125, charger.height * 0.50);
+
+  charger.triggerX = triggerX;
+  charger.startX = triggerX + startOffset;
+  charger.stopX = triggerX + stopOffset;
+  charger.exitX = triggerX + exitOffset;
+
+  charger.baseY = y;
+  charger.state = 'waiting';
+  charger.nextStateAt = 0;
+
+  charger.frameIndex = 0;
+  charger.nextFrameAt = 0;
+
+  charger.setVisible(false);
+  charger.body.enable = false;
+
+  // Hazard only. No bullet overlap. Immune to damage.
+  scene.physics.add.overlap(player, charger, hurtPlayer, null, scene);
+
+  reclinerChargers.push(charger);
+
+  return charger;
+}
+
+
+// =========================
+// LEVEL 3: UPDATE RECLINER CHARGER
+// =========================
+function updateReclinerCharger(scene, charger) {
+
+  if (!charger || !charger.active) {
+    return;
+  }
+    // Boss-spawned charger: starts already inside the arena,
+  // shakes briefly, then charges left.
+  if (charger.state === 'bossPreCharge') {
+
+    charger.x = charger.stopX + Math.sin(scene.time.now * 0.08) * 8;
+    charger.setTexture('chargerCharge01');
+
+    if (scene.time.now >= charger.nextStateAt) {
+      charger.state = 'bossCharging';
+      charger.setTexture('chargerCharge02');
+      charger.setVelocityX(-700);
+    }
+
+    return;
+  }
+
+  if (charger.state === 'bossCharging') {
+
+    charger.setTexture('chargerCharge02');
+
+    if (charger.x <= charger.exitX) {
+      charger.state = 'done';
+      charger.setVelocityX(0);
+      charger.disableBody(true, true);
+    }
+
+    return;
+  }
+
+  // Waiting offscreen until player approaches
+  if (charger.state === 'waiting') {
+
+    if (player.x >= charger.triggerX) {
+      charger.state = 'rollingIn';
+      charger.setVisible(true);
+      charger.body.enable = true;
+      charger.setPosition(charger.startX, charger.baseY);
+      charger.setTexture('chargerIdle01');
+      charger.setVelocityX(-190);
+    }
+
+    return;
+  }
+
+  // Idle rolling animation while entering from the right
+  if (charger.state === 'rollingIn') {
+
+    if (scene.time.now >= charger.nextFrameAt) {
+      charger.frameIndex = charger.frameIndex === 0 ? 1 : 0;
+      charger.setTexture(
+        charger.frameIndex === 0
+          ? 'chargerIdle01'
+          : 'chargerIdle02'
+      );
+      charger.nextFrameAt = scene.time.now + 180;
+    }
+
+    if (charger.x <= charger.stopX) {
+      charger.state = 'preCharge';
+      charger.setVelocityX(0);
+      charger.setTexture('chargerCharge01');
+      charger.nextStateAt = scene.time.now + 750;
+    }
+
+    return;
+  }
+
+  // Pre-charge shake
+  if (charger.state === 'preCharge') {
+
+    charger.x = charger.stopX + Math.sin(scene.time.now * 0.08) * 8;
+    charger.setTexture('chargerCharge01');
+
+    if (scene.time.now >= charger.nextStateAt) {
+      charger.state = 'charging';
+      charger.setTexture('chargerCharge02');
+      charger.setVelocityX(-680);
+    }
+
+    return;
+  }
+
+  // Actual charge left across the lane
+  if (charger.state === 'charging') {
+
+    charger.setTexture('chargerCharge02');
+
+    if (charger.x <= charger.exitX) {
+      charger.state = 'done';
+      charger.setVelocityX(0);
+      charger.disableBody(true, true);
+    }
+  }
+}
+// =========================
+// LEVEL 3: SPAWN JUNK FOOD GOBLIN ON FACTORY PLATFORM
+// =========================
+function spawnLevel3JunkFoodGoblin(scene, x, y, options = {}) {
+  return spawnJunkFoodGoblin(
+    scene,
+    x,
+    y + LEVEL3_JFGOBLIN_OFFSET_Y,
+    {
+      ...options,
+      parallaxFactor: 1
+    }
+  );
+}
+// =========================
+// LEVEL 3: CREATE BOSS ARENA TRIGGER
+// =========================
+function createLevel3BossArena(scene) {
+
+  // Full-height invisible trigger wall.
+  // The old trigger was too short vertically, so the player could pass
+  // over/under it on the final platform route without starting the boss.
+  level3BossArenaTrigger = scene.add.rectangle(
+    11650,
+    360,
+    120,
+    900,
+    0xff00ff,
+    0
+  );
+
+  level3BossArenaTrigger.setVisible(false);
+  scene.physics.add.existing(level3BossArenaTrigger, true);
+
+  scene.physics.add.overlap(
+    player,
+    level3BossArenaTrigger,
+    startLevel3BossFight,
+    null,
+    scene
+  );
+}
+
+// =========================
+// LEVEL 3: RESET BOSS FIGHT AFTER PLAYER DEATH
+// =========================
+function resetLevel3BossFightAfterPlayerDeath(scene) {
+
+  level3BossFightActive = false;
+  level3BossDead = false;
+  level3BossCanTakeDamage = false;
+  level3BossPhase = 1;
+  level3BossFrameIndex = 0;
+  level3BossNextFrameAt = 0;
+
+  if (level3Boss) {
+    level3Boss.destroy();
+    level3Boss = null;
+  }
+
+  if (level3BossHealthText) {
+    level3BossHealthText.destroy();
+    level3BossHealthText = null;
+  }
+
+  if (level3BossHealthBarBack) {
+    level3BossHealthBarBack.destroy();
+    level3BossHealthBarBack = null;
+  }
+
+  if (level3BossHealthBarFill) {
+    level3BossHealthBarFill.destroy();
+    level3BossHealthBarFill = null;
+  }
+
+  if (level3BossIntroText) {
+    level3BossIntroText.destroy();
+    level3BossIntroText = null;
+  }
+
+  if (level3BossLeftWall) {
+    level3BossLeftWall.destroy();
+    level3BossLeftWall = null;
+  }
+
+  if (level3BossRightWall) {
+    level3BossRightWall.destroy();
+    level3BossRightWall = null;
+  }
+
+  level3BossGateStripes.forEach(stripe => {
+    if (stripe) {
+      stripe.destroy();
+    }
+  });
+
+  level3BossGateStripes = [];
+
+  // Clear boss projectiles.
+  if (junkFoodDroneProjectiles) {
+    junkFoodDroneProjectiles.children.iterate(projectile => {
+      if (projectile && projectile.active) {
+        projectile.disableBody(true, true);
+      }
+    });
+  }
+
+  // Clear active boss chargers inside the arena.
+  reclinerChargers.forEach(charger => {
+    if (
+      charger &&
+      charger.active &&
+      (
+        charger.state === 'bossPreCharge' ||
+        charger.state === 'bossCharging'
+      )
+    ) {
+      charger.disableBody(true, true);
+    }
+  });
+
+  // Re-enable boss trigger so player can restart the fight.
+  if (level3BossArenaTrigger && level3BossArenaTrigger.body) {
+    level3BossArenaTrigger.body.enable = true;
+  }
+
+  // Keep exit locked until boss dies.
+  if (level3ExitGate && level3ExitGate.body) {
+    level3ExitGate.body.enable = false;
+    level3ExitGate.setAlpha(0.45);
+  }
+}
+// =========================
+// LEVEL 3: START BOSS FIGHT
+// =========================
+function startLevel3BossFight(playerObject, triggerObject) {
+
+  const scene = playerObject.scene;
+
+  if (level3BossFightActive || level3BossDead) {
+    return;
+  }
+
+  level3BossFightActive = true;
+console.log("LEVEL 3 BOSS FIGHT STARTED");
+
+  // Disable trigger so it cannot fire twice.
+  if (triggerObject && triggerObject.body) {
+    triggerObject.body.enable = false;
+  }
+
+  // Lock player into boss arena.
+    // Visible lockdown gate behind the player.
+  level3BossLeftWall = scene.add.rectangle(
+  LEVEL3_BOSS_ARENA_LEFT,
+  120,
+  80,
+  1000,
+  0x2a2a2a,
+  1
+);
+
+    level3BossGateStripes = [
+  scene.add.rectangle(LEVEL3_BOSS_ARENA_LEFT, -260, 80, 18, 0xffcc00, 1),
+  scene.add.rectangle(LEVEL3_BOSS_ARENA_LEFT, -80, 80, 18, 0xffcc00, 1),
+  scene.add.rectangle(LEVEL3_BOSS_ARENA_LEFT, 100, 80, 18, 0xffcc00, 1),
+  scene.add.rectangle(LEVEL3_BOSS_ARENA_LEFT, 280, 80, 18, 0xffcc00, 1),
+  scene.add.rectangle(LEVEL3_BOSS_ARENA_LEFT, 460, 80, 18, 0xffcc00, 1)
+];
+
+  level3BossGateStripes.forEach(stripe => {
+    stripe.setDepth(46);
+  });
+
+  // Invisible right boundary near the exit/boss side.
+  level3BossRightWall = scene.add.rectangle(
+    LEVEL3_BOSS_ARENA_RIGHT,
+    360,
+    40,
+    500,
+    0xff0000,
+    0
+  );
+
+  level3BossRightWall.setVisible(false);
+
+  scene.physics.add.existing(level3BossLeftWall, true);
+  scene.physics.add.existing(level3BossRightWall, true);
+
+  scene.physics.add.collider(player, level3BossLeftWall);
+  scene.physics.add.collider(player, level3BossRightWall);
+  scene.physics.add.collider(casings, level3BossLeftWall);
+  scene.physics.add.collider(casings, level3BossRightWall);
+
+    // Recliner Tyrant boss sprite
+    level3Boss = scene.physics.add.sprite(
+    12480,
+    500,
+    'reclinerTyrantIdle01'
+  );
+
+  level3Boss.setDepth(35);
+  level3Boss.setOrigin(0.5, 1);
+  level3Boss.setScale(0.28);
+
+  level3Boss.body.allowGravity = false;
+  level3Boss.body.immovable = true;
+
+  // Gameplay hitbox smaller than full art so decorative parts do not feel cheap.
+  level3Boss.body.setSize(
+    level3Boss.width * 0.62,
+    level3Boss.height * 0.68
+  );
+
+  level3Boss.body.setOffset(
+    level3Boss.width * 0.19,
+    level3Boss.height * 0.26
+  );
+
+  level3Boss.health = LEVEL3_BOSS_MAX_HEALTH;
+  level3Boss.isDead = false;
+    // Boss does not attack during intro speech.
+  level3Boss.nextAttackAt = Number.MAX_SAFE_INTEGER;
+  level3Boss.nextChargerAt = Number.MAX_SAFE_INTEGER;
+
+  level3BossFrameIndex = 0;
+  level3BossNextFrameAt = 0;
+  level3BossPhase = 1;
+
+  scene.physics.add.overlap(player, level3Boss, hurtPlayer, null, scene);
+  scene.physics.add.overlap(bullets, level3Boss, hitLevel3Boss, null, scene);
+
+       // Boss starts immune during intro.
+  level3BossCanTakeDamage = false;
+
+  level3BossIntroText = scene.add.text(
+    640,
+    175,
+    'Come to the Lazy side.\nWe have recliners and cookies.',
+    {
+      fontSize: '26px',
+      fill: '#ffffff',
+      align: 'center',
+      backgroundColor: '#111111',
+      padding: {
+        x: 18,
+        y: 12
+      },
+      stroke: '#000000',
+      strokeThickness: 4
+    }
+  );
+
+  level3BossIntroText.setOrigin(0.5, 0);
+  level3BossIntroText.setScrollFactor(0);
+  level3BossIntroText.setDepth(300);
+
+  level3BossHealthText = scene.add.text(
+    640,
+    118,
+    'RECLINER TYRANT',
+    {
+      fontSize: '26px',
+      fill: '#ff4444',
+      stroke: '#000000',
+      strokeThickness: 4
+    }
+  );
+
+  level3BossHealthText.setOrigin(0.5, 0);
+  level3BossHealthText.setScrollFactor(0);
+  level3BossHealthText.setDepth(300);
+  level3BossHealthText.setAlpha(0);
+
+  level3BossHealthBarBack = scene.add.rectangle(
+    640,
+    158,
+    420,
+    24,
+    0x220000,
+    1
+  );
+
+  level3BossHealthBarBack.setOrigin(0.5, 0.5);
+  level3BossHealthBarBack.setScrollFactor(0);
+  level3BossHealthBarBack.setDepth(299);
+  level3BossHealthBarBack.setAlpha(0);
+
+  level3BossHealthBarFill = scene.add.rectangle(
+  640,
+  158,
+  400,
+  14,
+  0xff2222,
+  1
+);
+
+level3BossHealthBarFill.setOrigin(0.5, 0.5);
+level3BossHealthBarFill.setScrollFactor(0);
+level3BossHealthBarFill.setDepth(300);
+level3BossHealthBarFill.setAlpha(1);
+level3BossHealthBarFill.setScale(0, 1);
+
+  scene.tweens.add({
+    targets: level3BossHealthText,
+    alpha: 1,
+    duration: 500
+  });
+
+  scene.tweens.add({
+    targets: level3BossHealthBarBack,
+    alpha: 1,
+    duration: 500
+  });
+
+  // Grow health bar from center outward.
+  scene.tweens.add({
+  targets: level3BossHealthBarFill,
+  scaleX: 1,
+  duration: 900,
+  ease: 'Cubic.easeOut'
+});
+
+    scene.time.delayedCall(3200, () => {
+    level3BossCanTakeDamage = true;
+
+    if (level3BossIntroText) {
+      level3BossIntroText.destroy();
+      level3BossIntroText = null;
+    }
+
+    if (level3Boss && !level3BossDead) {
+      level3Boss.nextAttackAt = scene.time.now + 700;
+      level3Boss.nextChargerAt = scene.time.now + 3200;
+    }
+  });
+}
+
+// =========================
+// LEVEL 3: UPDATE BOSS FIGHT
+// =========================
+function updateLevel3BossFight(scene) {
+
+  if (!level3BossFightActive || level3BossDead || !level3Boss) {
+    return;
+  }
+
+  // Phase changes by health.
+  if (level3Boss.health <= 10) {
+    level3BossPhase = 3;
+  } else if (level3Boss.health <= 20) {
+    level3BossPhase = 2;
+  } else {
+    level3BossPhase = 1;
+  }
+
+  // Idle / damaged visual state.
+  if (scene.time.now >= level3BossNextFrameAt) {
+
+    if (level3BossPhase === 3) {
+      level3Boss.setTexture('reclinerTyrantPhase3');
+    } else {
+      level3BossFrameIndex = level3BossFrameIndex === 0 ? 1 : 0;
+
+      level3Boss.setTexture(
+        level3BossFrameIndex === 0
+          ? 'reclinerTyrantIdle01'
+          : 'reclinerTyrantIdle02'
+      );
+    }
+
+    level3BossNextFrameAt = scene.time.now + 220;
+  }
+
+  // No attacks during intro / immunity.
+  if (!level3BossCanTakeDamage) {
+    return;
+  }
+
+  let shotCooldown = 1400;
+
+  if (level3BossPhase === 2) {
+    shotCooldown = 1100;
+  }
+
+  if (level3BossPhase === 3) {
+  shotCooldown = 1450;
+}
+  
+
+  if (scene.time.now >= level3Boss.nextAttackAt) {
+    level3Boss.nextAttackAt = scene.time.now + shotCooldown;
+    fireLevel3BossProjectile(scene);
+  }
+
+  if (
+    level3BossPhase >= 2 &&
+    scene.time.now >= level3Boss.nextChargerAt
+  ) {
+    level3Boss.nextChargerAt = scene.time.now + 3600;
+    spawnLevel3BossCharger(scene);
+  }
+}
+
+// =========================
+// LEVEL 3: BOSS PROJECTILE
+// =========================
+function fireLevel3BossProjectile(scene) {
+
+  if (!junkFoodDroneProjectiles || !level3Boss || level3BossDead) {
+    return;
+  }
+
+ if (level3BossPhase === 3) {
+  spawnLevel3BossProjectile(scene, -45, -135);
+  spawnLevel3BossProjectile(scene, -10, 135);
+  return;
+}
+
+  spawnLevel3BossProjectile(scene, -35, 0);
+}
+
+
+// =========================
+// LEVEL 3: SPAWN ONE BOSS PROJECTILE
+// =========================
+function spawnLevel3BossProjectile(scene, yOffset, aimOffsetY) {
+
+  const projectile = junkFoodDroneProjectiles.create(
+    level3Boss.x - 100,
+    level3Boss.y + yOffset,
+    'junkFoodDroneProjectile'
+  );
+
+projectile.setDepth(36);
+projectile.setScale(0.09);
+projectile.body.allowGravity = false;
+
+// Smaller damage box than the cheese projectile art.
+// Makes dodging feel fair instead of clipping the player.
+projectile.body.setSize(
+  projectile.width * 0.35,
+  projectile.height * 0.35
+);
+
+projectile.body.setOffset(
+  projectile.width * 0.325,
+  projectile.height * 0.325
+);
+
+  const targetX = player.x;
+  const targetY = player.y + aimOffsetY;
+
+  const dx = targetX - projectile.x;
+  const dy = targetY - projectile.y;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+ const speed = 300;
+
+  projectile.setVelocity(
+    (dx / dist) * speed,
+    (dy / dist) * speed
+  );
+
+  projectile.setRotation(
+    Phaser.Math.Angle.Between(
+      projectile.x,
+      projectile.y,
+      targetX,
+      targetY
+    )
+  );
+
+  scene.physics.add.overlap(player, projectile, hurtPlayer, null, scene);
+
+  scene.time.delayedCall(4000, () => {
+    if (projectile && projectile.active) {
+      projectile.disableBody(true, true);
+    }
+  });
+}
+// =========================
+// LEVEL 3: BOSS CHARGER ATTACK
+// =========================
+function spawnLevel3BossCharger(scene) {
+
+  const charger = scene.physics.add.sprite(
+    LEVEL3_BOSS_ARENA_RIGHT + 180,
+    430,
+    'chargerCharge01'
+  );
+
+  charger.setDepth(34);
+  charger.setScale(0.2);
+  charger.body.allowGravity = false;
+  charger.body.immovable = true;
+
+  charger.body.setSize(charger.width * 0.75, charger.height * 0.42);
+  charger.body.setOffset(charger.width * 0.125, charger.height * 0.50);
+
+  charger.state = 'bossPreCharge';
+  charger.stopX = LEVEL3_BOSS_ARENA_RIGHT - 150;
+  charger.exitX = LEVEL3_BOSS_ARENA_LEFT - 500;
+  charger.nextStateAt = scene.time.now + 500;
+
+  scene.physics.add.overlap(player, charger, hurtPlayer, null, scene);
+
+  reclinerChargers.push(charger);
+}
+
+// =========================
+// LEVEL 3: HIT BOSS
+// =========================
+function hitLevel3Boss(objectA, objectB) {
+
+  let bulletObject;
+  let bossObject;
+
+  if (objectA.texture && objectA.texture.key === 'bullet') {
+    bulletObject = objectA;
+    bossObject = objectB;
+  } else {
+    bulletObject = objectB;
+    bossObject = objectA;
+  }
+
+    if (
+    !bulletObject ||
+    !bulletObject.active ||
+    bulletObject.hasHit ||
+    !bossObject ||
+    bossObject.isDead ||
+    !level3BossCanTakeDamage
+  ) {
+    return;
+  }
+
+  bulletObject.hasHit = true;
+  bulletObject.disableBody(true, true);
+
+  bossObject.health -= bulletObject.isPowerShot ? 3 : 1;
+
+    if (level3BossHealthBarFill) {
+  const healthPercent = Phaser.Math.Clamp(
+    bossObject.health / LEVEL3_BOSS_MAX_HEALTH,
+    0,
+    1
+  );
+
+  level3BossHealthBarFill.setScale(healthPercent, 1);
+}
+
+  const hitEffect = bossObject.scene.add.image(
+    bossObject.x - 75,
+    bossObject.y - 210,
+    'reclinerTyrantHitEffect'
+  );
+
+  hitEffect.setOrigin(0.5, 0.5);
+  hitEffect.setScale(bossObject.scaleX);
+  hitEffect.setDepth(bossObject.depth + 2);
+
+  bossObject.scene.tweens.add({
+    targets: hitEffect,
+    alpha: 0,
+    scaleX: bossObject.scaleX * 1.25,
+    scaleY: bossObject.scaleY * 1.25,
+    duration: 120,
+    onComplete: () => {
+      hitEffect.destroy();
+    }
+  });
+
+  if (bossObject.health > 0) {
+    return;
+  }
+
+  killLevel3Boss(bossObject.scene);
+}
+
+
+// =========================
+// LEVEL 3: KILL BOSS / OPEN EXIT
+// =========================
+function killLevel3Boss(scene) {
+
+  if (level3BossDead) {
+    return;
+  }
+
+  level3BossDead = true;
+  level3BossFightActive = false;
+  level3BossCanTakeDamage = false;
+
+  addScore(2000);
+
+  if (level3Boss) {
+    const bossX = level3Boss.x;
+    const bossY = level3Boss.y;
+    const bossScale = level3Boss.scaleX;
+
+    level3Boss.isDead = true;
+    level3Boss.setVelocity(0, 0);
+
+    if (level3Boss.body) {
+      level3Boss.body.enable = false;
+    }
+
+    // Chair remains in the arena after the goblin ejects.
+    level3Boss.setTexture('reclinerTyrantDeath02');
+    level3Boss.setOrigin(0.5, 1);
+    level3Boss.setScale(bossScale);
+    level3Boss.setDepth(35);
+
+    const ejectedGoblin = scene.add.image(
+      bossX - 70,
+      bossY - 170,
+      'reclinerTyrantEject'
+    );
+
+    ejectedGoblin.setOrigin(0.5, 0.5);
+    ejectedGoblin.setScale(bossScale);
+    ejectedGoblin.setDepth(60);
+
+    scene.tweens.add({
+      targets: ejectedGoblin,
+      x: bossX - 620,
+      y: bossY - 430,
+      scaleX: bossScale * 0.22,
+      scaleY: bossScale * 0.22,
+      alpha: 0.15,
+      angle: -35,
+      duration: 1400,
+      ease: 'Cubic.easeOut',
+      onComplete: () => {
+        ejectedGoblin.destroy();
+      }
+    });
+  }
+
+  if (level3BossHealthText) {
+    level3BossHealthText.destroy();
+    level3BossHealthText = null;
+  }
+
+  if (level3BossHealthBarBack) {
+    level3BossHealthBarBack.destroy();
+    level3BossHealthBarBack = null;
+  }
+
+  if (level3BossHealthBarFill) {
+    level3BossHealthBarFill.destroy();
+    level3BossHealthBarFill = null;
+  }
+
+  if (level3BossIntroText) {
+    level3BossIntroText.destroy();
+    level3BossIntroText = null;
+  }
+
+  if (level3BossLeftWall) {
+    level3BossLeftWall.destroy();
+    level3BossLeftWall = null;
+  }
+
+  level3BossGateStripes.forEach(stripe => {
+    if (stripe) {
+      stripe.destroy();
+    }
+  });
+
+  level3BossGateStripes = [];
+
+  if (level3BossRightWall) {
+    level3BossRightWall.destroy();
+    level3BossRightWall = null;
+  }
+
+  // Activate exit after the eject gag has time to read.
+  scene.time.delayedCall(900, () => {
+    if (level3ExitGate && level3ExitGate.body) {
+      level3ExitGate.body.enable = true;
+      level3ExitGate.setAlpha(1);
+    }
+  });
+}
+// =========================
+// LEVEL 3: FACTORY LAYOUT + ENEMY PLACEMENT
+// =========================
+function createLevel3FactoryLayout(scene) {
+
+  const slimeBody = {
+    width: 0.70,
+    height: 0.55,
+    offsetX: 0.15,
+    offsetY: 0.05
+  };
+
+  // =========================================================
+  // SECTION 1 — SEWER EXIT / LOADING DOCK
+  // More vertical intro. No new enemies yet.
+  // =========================================================
+  const p01 = createLevel3Platform(scene, 600, 340, 260);
+const p02 = createLevel3Platform(scene, 980, 250, 240);
+const p03 = createLevel3Platform(scene, 1370, 145, 220);
+const p04 = createLevel3Platform(scene, 1740, 290, 300);
+
+  spawnSlime(scene, 850, 360, level3Floor, 700, 1050, 1, slimeBody);
+spawnBat(scene, 1350, 60, 1100, 1700, -1);
+
+level3EnemyMarkers.push({ type: 'slime', x: 850, y: 360 });
+level3EnemyMarkers.push({ type: 'bat', x: 1350, y: 60 });
+
+  // =========================================================
+  // SECTION 2 — FIRST CONVEYOR TUTORIAL
+  // =========================================================
+  const c01 = createLevel3Conveyor(scene, 2200, 490, 750, 1);
+const p05 = createLevel3Platform(scene, 2500, 330, 240);
+const p06 = createLevel3Platform(scene, 2880, 220, 220);
+
+  spawnSlime(scene, 2200, 360, c01, 1900, 2450, -1, slimeBody);
+
+  level3EnemyMarkers.push({ type: 'slime', x: 2200, y: 360 });
+
+  // =========================================================
+  // SECTION 3 — SHIPPING CATWALKS / FIRST DRONE
+  // Drone introduced high, hovering and shooting.
+  // =========================================================
+  const p07 = createLevel3Platform(scene, 3250, 335, 340);
+  const p08 = createLevel3Platform(scene, 3650, 235, 320);
+  const p09 = createLevel3Platform(scene, 4050, 335, 340);
+  const c02 = createLevel3Conveyor(scene, 3550, 490, 750, -1);
+
+  spawnLevel3JunkFoodGoblin(scene, 3650, 185, {
+  canThrow: true
+});
+
+  spawnJunkFoodDrone(scene, 3950, 145, {
+    leftBound: 3850,
+    rightBound: 4100,
+    direction: -1,
+    shootCooldown: 1900
+  });
+
+  spawnSlime(scene, 3500, 360, c02, 3250, 3800, 1, slimeBody);
+
+  level3PickupMarkers.push({ type: 'health', x: 4100, y: 430 });
+
+  level3EnemyMarkers.push({ type: 'jfgoblin', x: 3650, y: 225 });
+  level3EnemyMarkers.push({ type: 'drone', x: 3950, y: 145 });
+  level3EnemyMarkers.push({ type: 'slime', x: 3500, y: 360 });
+
+  // =========================================================
+  // SECTION 4 — FIRST RECLINER CHARGER TUTORIAL
+  // Clear lane. Player learns to jump it.
+  // =========================================================
+    // First charger lane: no low safety platform here.
+  // Player should jump the charger instead of standing above it.
+  createLevel3Platform(scene, 4900, 300, 280);
+
+    spawnReclinerCharger(scene, 4300, 430, {
+    startOffset: 850,
+    stopOffset: 610,
+    exitOffset: -700
+  });
+
+  level3EnemyMarkers.push({ type: 'reclinerCharger', x: 4300, y: 430 });
+
+  // =========================================================
+// SECTION 5 — FACTORY ROUTE SPLIT
+// Low route: conveyor + charger.
+// Mid route: normal factory platforms.
+// High route: harder third-level catwalk.
+// =========================================================
+const c03 = createLevel3Conveyor(scene, 5500, 490, 850, 1);
+
+// Mid route
+createLevel3Platform(scene, 5200, 365, 240);
+createLevel3Platform(scene, 5550, 275, 220);
+createLevel3Platform(scene, 5900, 185, 220);
+createLevel3Platform(scene, 6250, 275, 220);
+createLevel3Platform(scene, 6600, 365, 240);
+
+// Higher third-level route
+createLevel3Platform(scene, 5380, 95, 180);
+createLevel3Platform(scene, 5800, 15, 165);
+createLevel3Platform(scene, 6220, 95, 180);
+
+  spawnSlime(scene, 5350, 360, c03, 5100, 5650, 1, slimeBody);
+
+  spawnLevel3JunkFoodGoblin(scene, 5900, 145, {
+  canThrow: true
+});
+
+  spawnJunkFoodDrone(scene, 6300, 95, {
+    leftBound: 6180,
+    rightBound: 6420,
+    direction: 1,
+    shootCooldown: 1800
+  });
+
+    spawnReclinerCharger(scene, 5750, 430, {
+    startOffset: 850,
+    stopOffset: 610,
+    exitOffset: -650
+  });
+
+level3PickupMarkers.push({ type: 'upgrade', x: 5800, y: -55 });
+
+  level3EnemyMarkers.push({ type: 'slime', x: 5350, y: 360 });
+  level3EnemyMarkers.push({ type: 'jfgoblin', x: 5900, y: 145 });
+  level3EnemyMarkers.push({ type: 'drone', x: 6300, y: 95 });
+  level3EnemyMarkers.push({ type: 'reclinerCharger', x: 5750, y: 430 });
+
+  // =========================================================
+  // SECTION 6 — STEAM / RAFTER HALL
+  // More stepped factory verticality.
+  // =========================================================
+  const c04 = createLevel3Conveyor(scene, 7600, 490, 800, -1);
+
+  createLevel3Platform(scene, 7050, 405, 280);
+  createLevel3Platform(scene, 7400, 300, 280);
+  createLevel3Platform(scene, 7750, 195, 280);
+  createLevel3Platform(scene, 8100, 300, 280);
+
+  spawnBat(scene, 7400, 120, 7050, 7750, -1);
+
+  spawnJunkFoodDrone(scene, 8000, 110, {
+    leftBound: 7860,
+    rightBound: 8140,
+    direction: -1,
+    shootCooldown: 1700
+  });
+
+  spawnSlime(scene, 7600, 360, c04, 7300, 7900, -1, slimeBody);
+
+  level3EnemyMarkers.push({ type: 'steamVent', x: 7150, y: 485 });
+  level3EnemyMarkers.push({ type: 'steamVent', x: 7550, y: 485 });
+  level3EnemyMarkers.push({ type: 'steamVent', x: 7950, y: 485 });
+
+  level3EnemyMarkers.push({ type: 'bat', x: 7400, y: 120 });
+  level3EnemyMarkers.push({ type: 'drone', x: 8000, y: 110 });
+  level3EnemyMarkers.push({ type: 'slime', x: 7600, y: 360 });
+
+  // =========================================================
+  // SECTION 7 — PRESS / CRUSHER AREA
+  // Stacked platform path, shorter jumps.
+  // =========================================================
+  createLevel3Platform(scene, 8550, 350, 240);
+createLevel3Platform(scene, 8875, 250, 220);
+createLevel3Platform(scene, 9200, 150, 210);
+createLevel3Platform(scene, 9525, 250, 220);
+
+  spawnLevel3JunkFoodGoblin(scene, 9200, 130, {
+  canThrow: true
+});
+
+  spawnSlime(scene, 8850, 250, level3Floor, 8750, 8950, 1, slimeBody);
+
+  level3PickupMarkers.push({ type: 'health', x: 9450, y: 245 });
+
+  level3EnemyMarkers.push({ type: 'crusher', x: 8850, y: 220 });
+  level3EnemyMarkers.push({ type: 'jfgoblin', x: 9200, y: 130 });
+  level3EnemyMarkers.push({ type: 'slime', x: 8850, y: 250 });
+
+  // =========================================================
+  // SECTION 8 — RECLINER ASSEMBLY LINE
+  // Main factory identity: conveyors, drone, chargers.
+  // =========================================================
+  const c05 = createLevel3Conveyor(scene, 10000, 490, 1050, 1);
+
+ createLevel3Platform(scene, 9850, 300, 280);
+createLevel3Platform(scene, 10250, 195, 260);
+createLevel3Platform(scene, 10650, 300, 280);
+
+    spawnReclinerCharger(scene, 9600, 430, {
+    startOffset: 850,
+    stopOffset: 610,
+    exitOffset: -700
+  });
+
+  spawnLevel3JunkFoodGoblin(scene, 10250, 155, {
+  canThrow: true
+});
+
+  spawnJunkFoodDrone(scene, 10600, 130, {
+    leftBound: 10480,
+    rightBound: 10720,
+    direction: -1,
+    shootCooldown: 1600
+  });
+
+          spawnReclinerCharger(scene, 10400, 430, {
+    startOffset: 850,
+    stopOffset: 610,
+    exitOffset: -700
+  });
+  level3EnemyMarkers.push({ type: 'reclinerCharger', x: 9600, y: 430 });
+  level3EnemyMarkers.push({ type: 'jfgoblin', x: 10250, y: 155 });
+  level3EnemyMarkers.push({ type: 'drone', x: 10600, y: 130 });
+  level3EnemyMarkers.push({ type: 'reclinerCharger', x: 10400, y: 430 });
+
+  // =========================================================
+  // SECTION 9 — HIGH / LOW FINAL ROUTE
+  // =========================================================
+  const c06 = createLevel3Conveyor(scene, 11150, 490, 750, -1);
+
+ // Mid/high route
+createLevel3Platform(scene, 11050, 370, 230);
+createLevel3Platform(scene, 11350, 275, 220);
+createLevel3Platform(scene, 11650, 180, 210);
+createLevel3Platform(scene, 11950, 330, 220);
+
+// Third-level harder route
+createLevel3Platform(scene, 11180, 80, 165);
+createLevel3Platform(scene, 11550, -20, 150);
+createLevel3Platform(scene, 11920, 80, 165);
+
+  spawnSlime(scene, 11150, 360, c06, 10850, 11450, -1, slimeBody);
+  spawnBat(scene, 11350, 90, 11050, 11950, 1);
+
+  spawnLevel3JunkFoodGoblin(scene, 11650, 150, {
+  canThrow: true
+});
+
+  level3PickupMarkers.push({ type: 'health', x: 11550, y: -90 });
+
+  level3EnemyMarkers.push({ type: 'slime', x: 11150, y: 360 });
+  level3EnemyMarkers.push({ type: 'bat', x: 11350, y: 90 });
+  level3EnemyMarkers.push({ type: 'jfgoblin', x: 11650, y: 150 });
+
+  // =========================================================
+  // SECTION 10 — FINAL FACTORY EXIT RUN
+  // One last drone + charger combo.
+  // =========================================================
+  const c07 = createLevel3Conveyor(scene, 12300, 490, 800, 1);
+
+  createLevel3Platform(scene, 12250, 330, 300);
+
+  spawnReclinerCharger(scene, 11950, 430, {
+  startOffset: 850,
+  stopOffset: 610,
+  exitOffset: -700
+});
+
+level3EnemyMarkers.push({ type: 'reclinerCharger', x: 11950, y: 430 });
+// =========================================================
+// LEVEL 3 PICKUPS — POINT ROUTE REWARDS
+// =========================================================
+
+// Early platform climb
+level3PickupMarkers.push({ type: 'pointsSmall', x: 950, y: 260 });
+level3PickupMarkers.push({ type: 'pointsSmall', x: 1300, y: 120 });
+
+// First conveyor / platform tutorial
+level3PickupMarkers.push({ type: 'pointsSmall', x: 2500, y: 260 });
+level3PickupMarkers.push({ type: 'pointsSmall', x: 2880, y: 150 });
+
+// First drone catwalk area
+level3PickupMarkers.push({ type: 'pointsLarge', x: 3425, y: 150 });
+level3PickupMarkers.push({ type: 'pointsSmall', x: 4050, y: 265 });
+
+// First recliner charger tutorial reward
+level3PickupMarkers.push({ type: 'pointsSmall', x: 4900, y: 230 });
+
+// Factory route split — mid route
+level3PickupMarkers.push({ type: 'pointsSmall', x: 5550, y: 205 });
+level3PickupMarkers.push({ type: 'pointsSmall', x: 6250, y: 205 });
+
+// Factory route split — high route
+level3PickupMarkers.push({ type: 'pointsLarge', x: 5400, y: 25 });
+level3PickupMarkers.push({ type: 'pointsLarge', x: 6200, y: 25 });
+
+// Steam / rafter hall
+level3PickupMarkers.push({ type: 'pointsSmall', x: 7400, y: 230 });
+level3PickupMarkers.push({ type: 'pointsLarge', x: 7750, y: 125 });
+level3PickupMarkers.push({ type: 'pointsSmall', x: 8100, y: 230 });
+
+// Crusher / press area
+level3PickupMarkers.push({ type: 'pointsSmall', x: 8850, y: 225 });
+level3PickupMarkers.push({ type: 'pointsLarge', x: 9150, y: 125 });
+
+// Assembly line
+level3PickupMarkers.push({ type: 'pointsSmall', x: 9850, y: 265 });
+level3PickupMarkers.push({ type: 'pointsLarge', x: 9800, y: 70 });
+level3PickupMarkers.push({ type: 'pointsSmall', x: 10650, y: 265 });
+
+// Final high route
+level3PickupMarkers.push({ type: 'pointsLarge', x: 11200, y: 10 });
+level3PickupMarkers.push({ type: 'pointsLarge', x: 11900, y: 10 });
+
+// Final exit reward
+level3PickupMarkers.push({ type: 'pointsSmall', x: 12450, y: 220 });
+
+// Boss arena trigger before the exit.
+// Player crosses this line, arena locks, boss starts.
+createLevel3BossArena(scene);
+
+// Exit gate
+level3ExitGate = scene.physics.add.sprite(12600, 610, 'industrialExit');
+level3ExitGate.setScale(0.35);
+level3ExitGate.setDepth(20);
+level3ExitGate.setOrigin(0.5, 1);
+level3ExitGate.body.allowGravity = false;
+level3ExitGate.body.immovable = true;
+
+// Exit is visible but locked until boss dies.
+level3ExitGate.body.enable = false;
+level3ExitGate.setAlpha(0.45);
+
+// Shrink trigger so the player has to actually touch the exit area.
+level3ExitGate.body.setSize(
+  level3ExitGate.width * 0.65,
+  level3ExitGate.height * 0.75
+);
+
+level3ExitGate.body.setOffset(
+  level3ExitGate.width * 0.175,
+  level3ExitGate.height * 0.25
+);
+
+scene.physics.add.overlap(player, level3ExitGate, enterLevel3Exit, null, scene);
+}
+
+// =========================
+// ENTER SEWER EXIT
 // =========================
 function enterSewerExit(playerObject, doorObject) {
 
@@ -4612,8 +6353,311 @@ function enterSewerExit(playerObject, doorObject) {
     alpha: 1,
     duration: 800,
     onComplete: () => {
-      // Placeholder - no scene exists past the sewer yet.
-      console.log("Sewer level complete - next scene not yet built.");
+      playerObject.scene.scene.start('Level3Scene');
+    }
+  });
+}
+
+
+// =========================================================
+// =========================================================
+//                    LEVEL 3 — INDUSTRIAL DISTRICT
+// =========================================================
+// =========================================================
+
+function createLevel3() {
+
+  currentLevel = 'level3';
+  levelTransitioning = false;
+
+  this.cameras.main.setBackgroundColor('#111111');
+
+  // =========================
+  // INDUSTRIAL SKYBOX
+  // =========================
+  const industrialSky = this.add.tileSprite(
+  0,
+  -250,
+  LEVEL3_WIDTH,
+  GAME_HEIGHT + 700,
+  'industrialSky'
+);
+
+industrialSky.setOrigin(0, 0);
+industrialSky.setDepth(-200);
+industrialSky.setScrollFactor(0.02, 0);
+
+  // =========================
+  // RESET LEVEL 3 ARRAYS
+  // =========================
+  level3Platforms = [];
+  level3Conveyors = [];
+  level3EnemyMarkers = [];
+  level3PickupMarkers = [];
+
+  // =========================
+  // PLAYER
+  // =========================
+const level3Start = getDebugStartPosition(150, 300);
+player = createPlayer(this, level3Start.x, level3Start.y);
+
+  // =========================
+  // GROUPS / INPUT
+  // =========================
+  bullets = this.physics.add.group();
+  casings = this.physics.add.group();
+
+  cursors = this.input.keyboard.createCursorKeys();
+  fireKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+  restartKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.R);
+  invincibleKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.I);
+// =========================
+// LEVEL 3 ENEMY / PICKUP RESET
+// =========================
+slimes = [];
+bats = [];
+swoopBats = [];
+junkFoodGoblins = [];
+junkFoodDrones = [];
+reclinerChargers = [];
+pickups = [];
+
+level3BossArenaTrigger = null;
+level3Boss = null;
+level3BossLeftWall = null;
+level3BossRightWall = null;
+level3BossFightActive = false;
+level3BossDead = false;
+level3BossCanTakeDamage = false;
+level3BossGateStripes = [];
+
+if (level3BossHealthText) {
+  level3BossHealthText.destroy();
+  level3BossHealthText = null;
+}
+if (level3BossHealthBarBack) {
+  level3BossHealthBarBack.destroy();
+  level3BossHealthBarBack = null;
+}
+
+if (level3BossHealthBarFill) {
+  level3BossHealthBarFill.destroy();
+  level3BossHealthBarFill = null;
+}
+
+if (level3BossIntroText) {
+  level3BossIntroText.destroy();
+  level3BossIntroText = null;
+}
+
+activeUpgrade = null;
+if (upgradeText) {
+  upgradeText.destroy();
+  upgradeText = null;
+}
+
+jfgoblinCans = this.physics.add.group();
+junkFoodDroneProjectiles = this.physics.add.group();
+
+this.physics.add.overlap(player, jfgoblinCans, hurtPlayer, null, this);
+this.physics.add.overlap(player, junkFoodDroneProjectiles, hurtPlayer, null, this);
+  // =========================
+  // LEVEL 3 FLOOR
+  // =========================
+  level3Floor = this.add.rectangle(
+    LEVEL3_WIDTH / 2,
+    500,
+    LEVEL3_WIDTH,
+    40,
+    0xff0000
+  );
+
+  level3Floor.setVisible(false);
+  this.physics.add.existing(level3Floor, true);
+
+  this.physics.add.collider(player, level3Floor);
+this.physics.add.collider(casings, level3Floor);
+
+// Visible main factory floor art
+createLevel3FloorVisual(this);
+
+// Build Level 3 platforms, conveyors, enemies, and pickups
+createLevel3FactoryLayout(this);
+
+  // =========================
+  // PLACE REAL PICKUPS
+  // =========================
+  pickups = [];
+  activeUpgrade = null;
+  if (upgradeText) { upgradeText.destroy(); upgradeText = null; }
+
+level3PickupMarkers.forEach(marker => {
+  spawnPickup(
+    this,
+    marker.x,
+    marker.y + LEVEL3_PICKUP_OFFSET_Y,
+    marker.type
+  );
+});
+
+    // Level 3 marker visuals removed.
+  // Physics debug is controlled separately in the Phaser config.
+
+  // =========================
+  // WORLD / CAMERA
+  // =========================
+  this.physics.world.setBounds(0, -450, LEVEL3_WIDTH, GAME_HEIGHT + 450);
+  this.cameras.main.setBounds(0, -450, LEVEL3_WIDTH, GAME_HEIGHT + 450);
+  this.cameras.main.startFollow(player);
+
+  // =========================
+  // GAME OVER SCREEN
+  // =========================
+  createGameOverScreen(this);
+
+  // =========================
+  // HUD / CONTROLS
+  // =========================
+  createHUD(this);
+
+  // =========================
+  // LEVEL TRANSITION FADE SCREEN
+  // =========================
+  createFadeScreen(this);
+}
+
+
+// =========================
+// LEVEL 3 UPDATE
+// =========================
+function updateLevel3() {
+
+  if (Phaser.Input.Keyboard.JustDown(invincibleKey)) {
+    debugInvincible = !debugInvincible;
+    console.log("Invincibility:", debugInvincible ? "ON" : "OFF");
+  }
+
+  if (playerIsDead) {
+    player.body.setVelocityX(0);
+    player.setTexture('playerDead');
+    return;
+  }
+
+  // MOVE LEFT / RIGHT
+  if (cursors.left.isDown || moveLeft) {
+    player.body.setVelocityX(-300);
+    player.setFlipX(true);
+  } else if (cursors.right.isDown || moveRight) {
+    player.body.setVelocityX(300);
+    player.setFlipX(false);
+  } else {
+    player.body.setVelocityX(0);
+  }
+
+  // JUMP
+  if ((cursors.up.isDown || jumpPressed) && player.body.blocked.down) {
+    player.body.setVelocityY(-600);
+  }
+
+  // CROUCH
+  playerIsCrouching =
+    (cursors.down.isDown || crouchPressed) &&
+    player.body.blocked.down;
+
+  if (playerIsCrouching) {
+    setPlayerCrouchBody();
+  } else {
+    setPlayerStandingBody();
+  }
+
+  if (playerIsCrouching) {
+    player.body.setVelocityX(0);
+    player.setTexture('playerCrouch');
+  } else if (!player.body.blocked.down) {
+    if (player.body.velocity.y < -100) {
+      player.setTexture('playerJump1');
+    } else if (player.body.velocity.y >= -100 && player.body.velocity.y <= 100) {
+      player.setTexture('playerJump2');
+    } else {
+      player.setTexture('playerJump3');
+    }
+  } else if (cursors.left.isDown || cursors.right.isDown || moveLeft || moveRight) {
+    player.play('run', true);
+  } else {
+    player.play('idle', true);
+  }
+
+  // SHOOTING
+  if (Phaser.Input.Keyboard.JustDown(fireKey) && !playerIsDead) {
+    firePlayerBullet(this);
+  }
+
+  if (activeUpgrade === 'firerate' && !playerIsDead && (fireKey.isDown || firePressed)) {
+    firePlayerBullet(this);
+  }
+
+    updateLevel3Conveyors(this);
+updateLevel3Platforms(this);
+
+// LEVEL 3 ENEMY UPDATES
+slimes.forEach(slime => {
+  patrolSlime(slime, 60);
+});
+
+bats.forEach(bat => {
+  patrolBat(bat, 220, this);
+});
+
+junkFoodGoblins.forEach(goblin => {
+  updateJunkFoodGoblinThrow(this, goblin);
+});
+
+junkFoodDrones.forEach(drone => {
+  updateJunkFoodDrone(this, drone);
+});
+
+reclinerChargers.forEach(charger => {
+  updateReclinerCharger(this, charger);
+});
+
+updateLevel3BossFight(this);
+
+cullOffscreenBullets(this);
+
+updateHomingBullets(
+  this,
+  [
+    ...slimes,
+    ...bats,
+    ...junkFoodGoblins,
+    ...junkFoodDrones
+  ]
+);
+
+updateActiveUpgrade(this);
+pickups.forEach(p => updatePickup(this, p));
+settleCasings();
+}
+
+
+// =========================
+// ENTER LEVEL 3 EXIT
+// =========================
+function enterLevel3Exit(playerObject, gateObject) {
+
+  if (levelTransitioning || playerIsDead) {
+    return;
+  }
+
+  levelTransitioning = true;
+  playerObject.body.setVelocityX(0);
+
+  playerObject.scene.tweens.add({
+    targets: fadeScreen,
+    alpha: 1,
+    duration: 800,
+    onComplete: () => {
+      console.log("Level 3 complete - boss / Level 4 not built yet.");
     }
   });
 }
