@@ -64,7 +64,8 @@
     // ROOM 7 — FLOORS 12-13: maintenance shaft.
     spawnBat(scene, 900, floorY(13) - 250, 600, 1250, 1);
     spawnBat(scene, 2050, floorY(13) - 420, 1700, 2450, -1);
-    spawnJunkFoodDrone(scene, 1500, floorY(13) - 300, {
+    // Raised after playtest: this is the drone immediately after the wind tunnel.
+    spawnJunkFoodDrone(scene, 1500, floorY(13) - 390, {
       leftBound: 1250,
       rightBound: 1800,
       direction: -1,
@@ -139,14 +140,11 @@
 
     if (!scene) return false;
 
-    // If the scene has already completed create(), populate immediately.
     if (scene.sys && scene.sys.isActive() && scene.sys.settings.status === Phaser.Scenes.RUNNING) {
       populateLevel4(scene);
       return true;
     }
 
-    // Otherwise wait for Phaser's CREATE event, which fires after the
-    // scene's createLevel4() callback has finished building the tower.
     scene.events.once(Phaser.Scenes.Events.CREATE, function () {
       populateLevel4(scene);
     });
@@ -154,8 +152,6 @@
     return true;
   }
 
-  // Phaser boots asynchronously after main.js creates the Game object.
-  // Poll only until the Level4 scene exists, then stop completely.
   const attachTimer = window.setInterval(function () {
     if (attachPopulationPass()) {
       window.clearInterval(attachTimer);
