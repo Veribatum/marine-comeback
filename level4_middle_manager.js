@@ -72,8 +72,13 @@
     m.nextMoveChange = 0;
     managers.push(m);
 
-    if (platforms) scene.physics.add.collider(m, platforms);
-    if (level4Platforms) scene.physics.add.collider(m, level4Platforms);
+    // Level 4 uses its own platform array. Do not reference the old
+    // `platforms` variable here; it is not defined in the current game.
+    if (Array.isArray(level4Platforms)) {
+      level4Platforms.forEach(platform => {
+        if (platform && platform.active) scene.physics.add.collider(m, platform);
+      });
+    }
 
     scene.physics.add.overlap(bullets, m, function (bullet, manager) {
       if (!bullet.active || !manager.active || manager.dead) return;
@@ -116,7 +121,6 @@
           m.moveDir = player.x < m.x ? -1 : 1;
           m.nextMoveChange = now + 700;
         }
-        // Slow office-floor pacing: he pressures the player but does not rush like a grunt.
         if (dist > 260) m.setVelocityX(m.moveDir * (m.floorNumber >= 17 ? 62 : 48));
         else m.setVelocityX(0);
         m.setFlipX(player.x < m.x);
@@ -131,7 +135,6 @@
     attached = true;
 
     const spawnBoth = function () {
-      // Open office floors in the current Level 4 layout.
       spawnManager(scene, 2050, floorY(9), 9);
       spawnManager(scene, 2050, floorY(17), 17);
       scene.events.on(Phaser.Scenes.Events.UPDATE, () => updateManagers(scene));
