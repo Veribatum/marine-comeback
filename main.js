@@ -154,7 +154,8 @@ let currentLevel = 'apartment';
 // 'level1'
 // 'sewer'
 // 'level3'
-const DEBUG_START_LEVEL = 'apartment';
+// 'level4'
+const DEBUG_START_LEVEL = 'level4';
 
 // Optional spawn override.
 // Leave as null to use that level's normal start position.
@@ -188,7 +189,7 @@ const config = {
     default: 'arcade',
     arcade: {
       gravity: { y: 1000 },
-      debug: false
+      debug: true
     }
   },
   scene: [
@@ -209,10 +210,15 @@ const config = {
       update: updateSewerScene
     },
     {
-      key: 'Level3Scene',
-      create: createLevel3,
-      update: updateLevel3
-    }
+  key: 'Level3Scene',
+  create: createLevel3,
+  update: updateLevel3
+},
+{
+  key: 'Level4Scene',
+  create: createLevel4,
+  update: updateLevel4
+}
   ]
 };
 // =========================
@@ -229,10 +235,14 @@ function getDebugStartSceneKey() {
   }
 
   if (DEBUG_START_LEVEL === 'level3') {
-    return 'Level3Scene';
-  }
+  return 'Level3Scene';
+}
 
-  return 'ApartmentScene';
+if (DEBUG_START_LEVEL === 'level4') {
+  return 'Level4Scene';
+}
+
+return 'ApartmentScene';
 }
 
 
@@ -514,6 +524,43 @@ this.load.image('reclinerTyrantDead', 'assets/recliner_tyrant_dead.png');
 this.load.image('reclinerTyrantDeath02', 'assets/recliner_tyrant_death02.png');
 this.load.image('reclinerTyrantEject', 'assets/recliner_tyrant_eject.png');
 this.load.image('reclinerTyrantHitEffect', 'assets/recliner_tyrant_hiteffct.png');
+// =========================
+// LEVEL 4 — OFFICE ASSETS
+// =========================
+this.load.image('officeStreet', 'assets/office_street.png');
+this.load.image('officeGarage', 'assets/office_garage.png');
+this.load.image('officeGarageFront', 'assets/office_garage_front.png');
+this.load.image('officeBase', 'assets/office_base.png');
+this.load.image('officeWindows', 'assets/office_windows.png');
+
+this.load.image('officeOpen01', 'assets/office_open_01.png');
+this.load.image('officeOpen02', 'assets/office_open_02.png');
+this.load.image('officeOpen03', 'assets/office_open_03.png');
+
+this.load.image('officePainterPlatform', 'assets/office_painterplatform.png');
+this.load.image('officePlatform', 'assets/office_platform.png');
+// =========================
+// LEVEL 4 — WIND FX
+// =========================
+this.load.image('pregust1', 'assets/pregust 1.png');
+this.load.image('pregust2', 'assets/pregust 2.png');
+this.load.image('pregust3', 'assets/pregust 3.png');
+this.load.image('pregust4', 'assets/pregust 4.png');
+
+this.load.image('medgust1', 'assets/medgust 1.png');
+this.load.image('medgust2', 'assets/medgust 2.png');
+this.load.image('medgust3', 'assets/medgust 3.png');
+this.load.image('medgust4', 'assets/medgust 4.png');
+
+this.load.image('heavygust1', 'assets/heavygust 1.png');
+this.load.image('heavygust2', 'assets/heavygust 2.png');
+this.load.image('heavygust3', 'assets/heavygust 3.png');
+this.load.image('heavygust4', 'assets/heavygust 4.png');
+
+this.load.image('full1', 'assets/full 1.png');
+this.load.image('full2', 'assets/full 2.png');
+this.load.image('full3', 'assets/full 3.png');
+this.load.image('full4', 'assets/full 4.png');
 }
 
 
@@ -1656,7 +1703,11 @@ function spawnSteamTrap(scene, x, y, options = {}) {
   const trap = scene.physics.add.staticSprite(x, y, 'steamTrap01');
 
   trap.setDepth(8); // above street props (cars/vending at depth 7), below player/enemies
-  trap.setScale(0.12);
+ trap.setScale(
+  currentLevel === 'level4'
+    ? 0.18
+    : 0.12
+);
   trap.setVisible(false); // hidden while idle - only shown while erupting
 
   trap.isErupting = false;
@@ -1669,8 +1720,28 @@ function spawnSteamTrap(scene, x, y, options = {}) {
   // Shrink the damage hitbox to roughly the steam plume itself rather
   // than the whole sprite bounding box, so the player only takes damage
   // when actually standing in the steam, not just near the manhole.
-  trap.body.setSize(trap.width * 0.09, trap.height * 0.2);
-  trap.body.setOffset(trap.width * 0.455, trap.height * 0.4);
+if (currentLevel === 'level4') {
+  trap.body.setSize(
+    trap.width * 0.12,
+    trap.height * 0.24
+  );
+
+  trap.body.setOffset(
+    trap.width * 0.44,
+    trap.height * 0.38
+  );
+
+} else {
+  trap.body.setSize(
+    trap.width * 0.09,
+    trap.height * 0.2
+  );
+
+  trap.body.setOffset(
+    trap.width * 0.455,
+    trap.height * 0.4
+  );
+}
 
   // The processCallback (4th arg) must accept (obj1, obj2) per Phaser's
   // API even though it doesn't need either argument here - it just
@@ -2397,17 +2468,25 @@ function hurtPlayer(playerObject, enemyObject) {
         playerObject.clearTint();
 
                 if (
-          currentLevel === 'level3' &&
-          (level3BossFightActive || level3Boss || level3BossCanTakeDamage)
-        ) {
-          resetLevel3BossFightAfterPlayerDeath(playerObject.scene);
+  currentLevel === 'level3' &&
+  (level3BossFightActive || level3Boss || level3BossCanTakeDamage)
+) {
+  resetLevel3BossFightAfterPlayerDeath(playerObject.scene);
 
-          playerObject.x = LEVEL3_BOSS_CHECKPOINT_X;
-          playerObject.y = LEVEL3_BOSS_CHECKPOINT_Y;
-        } else {
-          playerObject.x = 150;
-          playerObject.y = 300;
-        }
+  playerObject.x = LEVEL3_BOSS_CHECKPOINT_X;
+  playerObject.y = LEVEL3_BOSS_CHECKPOINT_Y;
+
+} else if (currentLevel === 'level4') {
+
+  playerObject.x = level4CheckpointX;
+  playerObject.y = level4CheckpointY;
+
+  playerObject.body.allowGravity = true;
+
+} else {
+  playerObject.x = 150;
+  playerObject.y = 300;
+}
 
         playerObject.setVelocity(0, 0);
         healthBar.setTexture('health3');
@@ -3456,6 +3535,35 @@ let movingPlatform13;
 let sewerExitDoor;
 let sewerSlimeDrops = [];
 let sewerRats = [];
+
+// =========================================================
+// LEVEL 4 — CORPORATE GOBLIN HEADQUARTERS
+// =========================================================
+const LEVEL4_WIDTH = 3200;
+const LEVEL4_HEIGHT = 12800;
+
+const LEVEL4_STREET_Y = 12420;
+const LEVEL4_ROOF_Y = 300;
+const LEVEL4_FLOOR_SPACING = 600;
+
+// Traffic stays out of the protected starting/elevator area.
+const LEVEL4_TRAFFIC_LEFT = 1100;
+
+let level4Street;
+let level4Platforms = [];
+let level4Elevators = [];
+let level4Cars = [];
+let level4SteamTraps = [];
+let level4ExitTrigger;
+let level4StreetManholeXs = [];
+let level4DropPlatforms = [];
+let level4FanPlatforms = [];
+let level4FanSequenceStartedAt = 0;
+let level4SideFanZones = [];
+let level4AirBursts = [];
+
+let level4CheckpointX = 380;
+let level4CheckpointY = LEVEL4_STREET_Y - 515;
 
 // =========================
 // HIT TOXIC WATER (instant death, separate from hurtPlayer)
@@ -6535,7 +6643,6 @@ level3PickupMarkers.forEach(marker => {
   createFadeScreen(this);
 }
 
-
 // =========================
 // LEVEL 3 UPDATE
 // =========================
@@ -6613,6 +6720,24 @@ slimes.forEach(slime => {
   patrolSlime(slime, 60);
 });
 
+// Level 4 flying enemies.
+bats.forEach(bat => {
+  patrolBat(
+    bat,
+    180,
+    this
+  );
+});
+
+junkFoodDrones.forEach(drone => {
+  updateJunkFoodDrone(
+    this,
+    drone
+  );
+});
+
+cullOffscreenBullets(this);
+
 bats.forEach(bat => {
   patrolBat(bat, 220, this);
 });
@@ -6659,14 +6784,3305 @@ function enterLevel3Exit(playerObject, gateObject) {
   }
 
   levelTransitioning = true;
-  playerObject.body.setVelocityX(0);
+  playerObject.body.setVelocity(0, 0);
 
   playerObject.scene.tweens.add({
     targets: fadeScreen,
     alpha: 1,
     duration: 800,
     onComplete: () => {
-      console.log("Level 3 complete - boss / Level 4 not built yet.");
+      playerObject.scene.scene.start('Level4Scene');
+    }
+  });
+}
+// =========================================================
+// =========================================================
+// LEVEL 4 — CORPORATE GOBLIN HEADQUARTERS
+// =========================================================
+// =========================================================
+
+// =========================
+// LEVEL 4: CREATE BUILDING ART
+// =========================
+function createLevel4BuildingArt(scene) {
+
+  const buildingLeft = 110;
+  const buildingWidth = LEVEL4_WIDTH - 220;
+
+  
+
+  // Building base at street level.
+  // Building-base pieces aligned with the top edge of the street art.
+const officeBaseSource = scene.textures
+  .get('officeBase')
+  .getSourceImage();
+
+const officeBaseScale = 0.42;
+const officeBasePieceWidth =
+  officeBaseSource.width * officeBaseScale;
+
+// Slight overlap removes gaps caused by transparent edge padding.
+const officeBaseOverlap = 60;
+const officeBaseStep =
+  officeBasePieceWidth - officeBaseOverlap;
+
+let officeBaseX = officeBasePieceWidth / 2;
+
+while (
+  officeBaseX <
+  LEVEL4_WIDTH + officeBasePieceWidth
+) {
+
+  const officeBasePiece = scene.add.image(
+    officeBaseX,
+    LEVEL4_STREET_Y - 65,
+    'officeBase'
+  );
+
+  officeBasePiece.setOrigin(0.5, 1);
+  officeBasePiece.setScale(officeBaseScale);
+  officeBasePiece.setDepth(-70);
+
+  officeBaseX += officeBaseStep;
+}
+
+// =========================================================
+// OFFICE WINDOWS — STACKED ABOVE THE BUILDING BASE
+// =========================================================
+
+const officeBaseBottomY = LEVEL4_STREET_Y - 65;
+
+const officeBaseTopY =
+  officeBaseBottomY -
+  (officeBaseSource.height * officeBaseScale);
+
+const windowSource = scene.textures
+  .get('officeWindows')
+  .getSourceImage();
+
+const windowScale = 0.52;
+
+const windowPieceWidth =
+  windowSource.width * windowScale;
+
+const windowPieceHeight =
+  windowSource.height * windowScale;
+
+// Larger overlap pulls the window sections closer together.
+const windowOverlapX = 145;
+const windowOverlapY = 155;
+
+const windowStepX =
+  windowPieceWidth - windowOverlapX;
+
+const windowStepY =
+  windowPieceHeight - windowOverlapY;
+
+// Move the complete window wall downward.
+const windowsBottomY = officeBaseTopY + 105;
+
+let windowY =
+  windowsBottomY - (windowPieceHeight / 2);
+
+while (windowY > -windowPieceHeight) {
+
+  let windowX = buildingLeft + (windowPieceWidth / 2);
+
+  while (
+    windowX <
+    buildingLeft + buildingWidth + windowPieceWidth
+  ) {
+
+    const windowPiece = scene.add.image(
+      windowX,
+      windowY,
+      'officeWindows'
+    );
+
+    windowPiece.setScale(windowScale);
+    windowPiece.setDepth(-90);
+
+    windowX += windowStepX;
+  }
+
+  windowY -= windowStepY;
+}
+
+ // Solid backing prevents the office windows from showing through
+// transparent sections at the bottom of the street artwork.
+// Solid backing prevents the office windows from showing beneath
+// transparent portions of the street artwork.
+const officeStreetBacking = scene.add.rectangle(
+  LEVEL4_WIDTH / 2,
+LEVEL4_STREET_Y + 90,
+  LEVEL4_WIDTH,
+  430,
+  0x111820,
+  1
+);
+
+officeStreetBacking.setDepth(-21);
+
+// Reset the manhole positions every time Level 4 is created.
+level4StreetManholeXs = [];
+
+const streetSource = scene.textures
+  .get('officeStreet')
+  .getSourceImage();
+
+const streetScale = 0.62;
+const streetPieceWidth = streetSource.width * streetScale;
+
+// Overlap each piece slightly so transparent edge padding
+// cannot create black vertical seams.
+const streetOverlap = 18;
+const streetStep = streetPieceWidth - streetOverlap;
+
+let streetX = streetPieceWidth / 2;
+
+while (streetX < LEVEL4_WIDTH + streetPieceWidth) {
+
+  const streetPiece = scene.add.image(
+  streetX,
+ LEVEL4_STREET_Y + 65,
+  'officeStreet'
+);
+  streetPiece.setOrigin(0.5, 0.5);
+  streetPiece.setScale(streetScale);
+  streetPiece.setDepth(-20);
+
+  // Each street asset has its manhole near the center.
+  level4StreetManholeXs.push(streetX);
+
+  streetX += streetStep;
+}
+
+  // Parking-garage entrance artwork.
+  // Garage art matches the safe garage-roof platform:
+// platform center x:380, width:700, y:LEVEL4_STREET_Y - 260.
+const officeGarage = scene.add.image(
+  500,
+  LEVEL4_STREET_Y - 495,
+  'officeGarage'
+);
+
+officeGarage.setOrigin(0.5, 0);
+officeGarage.setDepth(3);
+officeGarage.setDisplaySize(
+  1050,
+  540
+);
+// Front tunnel wall sits over the cars as they enter.
+const officeGarageFront = scene.add.image(
+  500,
+  LEVEL4_STREET_Y - 495,
+  'officeGarageFront'
+);
+
+officeGarageFront.setOrigin(0.5, 0);
+officeGarageFront.setDepth(16);
+officeGarageFront.setDisplaySize(
+  1050,
+  545
+);
+
+  const floorY = floorNumber =>
+    LEVEL4_STREET_Y -
+    ((floorNumber - 1) * LEVEL4_FLOOR_SPACING);
+
+}
+// =========================
+// LEVEL 4: CREATE OUTSIDE PLATFORM
+// =========================
+function createLevel4OutsidePlatform(
+  scene,
+  x,
+  y,
+  width
+) {
+
+  return createLevel4Platform(
+    scene,
+    x,
+    y,
+    width,
+    0xff0000,
+    ''
+  );
+}
+// =========================
+// LEVEL 4: CREATE SOLID PLATFORM
+// =========================
+function createLevel4Platform(
+  scene,
+  x,
+  y,
+  width,
+  color = 0x444444,
+  label = ''
+) {
+
+  const platform = scene.add.rectangle(
+  x,
+  y,
+  width,
+  30,
+  color,
+  1
+);
+
+// All Level 4 platform rectangles are collision only.
+// Visible artwork is added separately where appropriate.
+platform.setVisible(false);
+platform.setDepth(5);
+
+  scene.physics.add.existing(
+    platform,
+    true
+  );
+
+  scene.physics.add.collider(
+    player,
+    platform,
+    null,
+    oneWayPlatformCheck,
+    scene
+  );
+
+  scene.physics.add.collider(
+    casings,
+    platform
+  );
+
+  // Full interior floors are created at very large widths.
+  // Everything under 1000 pixels is an exterior ledge/platform
+  // and receives the office_platform artwork automatically.
+  if (width < 1000) {
+
+    platform.setVisible(false);
+
+    const artwork = scene.add.image(
+  x,
+  y - 8,
+  'officePlatform'
+);
+
+    artwork.setOrigin(0.5, 0.5);
+
+    artwork.setDisplaySize(
+      width,
+      90
+    );
+
+    artwork.setDepth(14);
+
+    platform.visual = artwork;
+  }
+
+  if (label) {
+
+    const labelText = scene.add.text(
+      x,
+      y - 28,
+      label,
+      {
+        fontSize: '18px',
+        fill: '#ffffff',
+        stroke: '#000000',
+        strokeThickness: 3
+      }
+    );
+
+    labelText.setOrigin(0.5, 1);
+    labelText.setDepth(20);
+  }
+
+  level4Platforms.push(platform);
+
+  return platform;
+}
+// =========================
+// LEVEL 4: CREATE DROP PLATFORM
+// =========================
+function createLevel4DropPlatform(
+  scene,
+  x,
+  y,
+  width,
+  options = {}
+) {
+
+  const {
+    shakeDuration = 650,
+    resetDelay = 2200,
+    fallSpeed = 520
+  } = options;
+
+  const platform = scene.add.rectangle(
+    x,
+    y,
+    width,
+    30,
+    0x7a5b3a,
+    1
+  );
+
+  platform.setDepth(8);
+
+  scene.physics.add.existing(platform);
+
+  platform.body.allowGravity = false;
+platform.body.immovable = true;
+platform.body.moves = true;
+platform.body.pushable = false;
+platform.body.setVelocity(0, 0);
+
+  platform.startX = x;
+  platform.startY = y;
+
+  platform.state = 'waiting';
+  platform.shakeUntil = 0;
+  platform.resetAt = 0;
+
+  platform.shakeDuration = shakeDuration;
+  platform.resetDelay = resetDelay;
+  platform.fallSpeed = fallSpeed;
+
+  scene.physics.add.collider(player, platform);
+  scene.physics.add.collider(casings, platform);
+
+  level4DropPlatforms.push(platform);
+
+  return platform;
+}
+// =========================
+// LEVEL 4: UPDATE DROP PLATFORMS
+// =========================
+function updateLevel4DropPlatforms(scene) {
+
+  level4DropPlatforms.forEach(platform => {
+    if (platform.visual) {
+  platform.visual.setPosition(
+    platform.x,
+    platform.y + 5
+  );
+
+  platform.visual.setVisible(
+    platform.visible
+  );
+}
+
+    if (!platform || !platform.body) {
+      return;
+    }
+
+    const playerStandingOnPlatform =
+      player.body.blocked.down &&
+      player.body.bottom >= platform.body.top - 10 &&
+      player.body.bottom <= platform.body.top + 20 &&
+      player.x >= platform.body.left &&
+      player.x <= platform.body.right;
+
+    if (
+      platform.state === 'waiting' &&
+      playerStandingOnPlatform
+    ) {
+      platform.state = 'shaking';
+      platform.shakeUntil =
+        scene.time.now + platform.shakeDuration;
+    }
+
+    if (platform.state === 'shaking') {
+
+      platform.x =
+        platform.startX +
+        Math.sin(scene.time.now * 0.12) * 8;
+
+      platform.body.updateFromGameObject();
+
+      if (scene.time.now >= platform.shakeUntil) {
+        platform.state = 'falling';
+        platform.x = platform.startX;
+        platform.body.setVelocityY(platform.fallSpeed);
+      }
+
+      return;
+    }
+
+    if (platform.state === 'falling') {
+
+      if (platform.y > platform.startY + 700) {
+        platform.state = 'resetting';
+        platform.body.setVelocityY(0);
+        platform.setVisible(false);
+        platform.body.enable = false;
+        platform.resetAt =
+          scene.time.now + platform.resetDelay;
+      }
+
+      return;
+    }
+
+    if (
+      platform.state === 'resetting' &&
+      scene.time.now >= platform.resetAt
+    ) {
+      platform.setPosition(
+        platform.startX,
+        platform.startY
+      );
+
+      platform.body.enable = true;
+      platform.body.reset(
+        platform.startX,
+        platform.startY
+      );
+
+      platform.setVisible(true);
+      platform.state = 'waiting';
+    }
+  });
+}
+// =========================
+// LEVEL 4: CREATE SEQUENCED FAN PLATFORM
+// =========================
+function createLevel4FanPlatform(
+  scene,
+  x,
+  bottomY,
+  topY,
+  options = {}
+) {
+
+  const {
+    width = 210,
+    moveSpeed = 320,
+    sequenceIndex = 0
+  } = options;
+
+  const platform = scene.add.rectangle(
+    x,
+    bottomY,
+    width,
+    28,
+    0x5f7480,
+    1
+  );
+
+  platform.setDepth(8);
+
+  scene.physics.add.existing(platform);
+
+  platform.body.allowGravity = false;
+  platform.body.immovable = true;
+  platform.body.moves = true;
+  platform.body.pushable = false;
+
+  platform.bottomY = bottomY;
+  platform.topY = topY;
+  platform.moveSpeed = moveSpeed;
+  platform.sequenceIndex = sequenceIndex;
+
+  platform.body.setVelocity(0, 0);
+
+  scene.physics.add.collider(
+    player,
+    platform
+  );
+
+  scene.physics.add.collider(
+    casings,
+    platform
+  );
+
+  level4FanPlatforms.push(platform);
+
+  return platform;
+}
+// =========================
+// LEVEL 4: UPDATE SEQUENCED FAN PLATFORMS
+// =========================
+function updateLevel4FanPlatforms(scene) {
+
+  // Each phase lasts long enough for one platform to rise,
+  // hold briefly, and let the player jump.
+  const phaseDuration = 2500;
+
+  const elapsed =
+    scene.time.now - level4FanSequenceStartedAt;
+
+  const activePhase =
+    Math.floor(elapsed / phaseDuration) % 4;
+
+  level4FanPlatforms.forEach(platform => {
+
+    if (
+      !platform ||
+      !platform.active ||
+      !platform.body
+    ) {
+      return;
+    }
+
+    // Phase 0: Fan 1 up
+    // Phase 1: Fan 2 up
+    // Phase 2: Fan 3 up
+    // Phase 3: all reset down
+   let shouldBeUp =
+  activePhase === platform.sequenceIndex;
+
+// Keep Fan 2 down slightly longer so the player has time
+// to jump onto it from Fan 1.
+if (
+  platform.sequenceIndex === 1 &&
+  activePhase === 1 &&
+  (elapsed % phaseDuration) < 500
+) {
+  shouldBeUp = false;
+}
+
+// Keep Fan 3 down slightly longer so the player has time
+// to jump onto it from Fan 2.
+if (
+  platform.sequenceIndex === 2 &&
+  activePhase === 2 &&
+  (elapsed % phaseDuration) < 500
+) {
+  shouldBeUp = false;
+}
+
+const targetY =
+  shouldBeUp
+    ? platform.topY
+    : platform.bottomY;
+
+    const difference =
+      targetY - platform.y;
+
+    // Platform has reached its assigned position.
+    if (Math.abs(difference) <= 6) {
+
+      platform.setPosition(
+        platform.x,
+        targetY
+      );
+
+      platform.body.reset(
+        platform.x,
+        targetY
+      );
+
+      platform.body.setVelocity(0, 0);
+
+      return;
+    }
+
+    platform.body.setVelocityX(0);
+
+    platform.body.setVelocityY(
+      difference < 0
+        ? -platform.moveSpeed
+        : platform.moveSpeed
+    );
+  });
+}
+// =========================
+// LEVEL 4: CREATE TIMED AIR BURST
+// =========================
+function createLevel4AirBurst(
+  scene,
+  x,
+  y,
+  width,
+  height,
+  options = {}
+) {
+
+  const {
+    launchVelocity = -900,
+    activeDuration = 1100,
+    inactiveDuration = 1300,
+    startOffset = 0
+  } = options;
+
+  const burst = scene.add.rectangle(
+    x,
+    y,
+    width,
+    height,
+    0x44ccff,
+    0.22
+  );
+
+  burst.setDepth(6);
+
+  scene.physics.add.existing(
+    burst,
+    true
+  );
+
+  burst.launchVelocity = launchVelocity;
+  burst.activeDuration = activeDuration;
+  burst.inactiveDuration = inactiveDuration;
+
+  burst.isActive = false;
+  burst.nextStateAt =
+    scene.time.now + startOffset + inactiveDuration;
+
+  burst.nextPlayerLaunchAt = 0;
+
+  scene.physics.add.overlap(
+    player,
+    burst,
+    (playerObject, burstObject) => {
+
+      if (
+        playerIsDead ||
+        !burstObject.isActive ||
+        scene.time.now < burstObject.nextPlayerLaunchAt
+      ) {
+        return;
+      }
+
+      burstObject.nextPlayerLaunchAt =
+        scene.time.now + 450;
+
+      playerObject.setVelocityY(
+        burstObject.launchVelocity
+      );
+    },
+    null,
+    scene
+  );
+
+  level4AirBursts.push(burst);
+
+  return burst;
+}
+
+
+// =========================
+// LEVEL 4: UPDATE TIMED AIR BURSTS
+// =========================
+function updateLevel4AirBursts(scene) {
+
+  level4AirBursts.forEach(burst => {
+
+    if (
+      !burst ||
+      !burst.active ||
+      !burst.body
+    ) {
+      return;
+    }
+
+    if (scene.time.now < burst.nextStateAt) {
+      return;
+    }
+
+    burst.isActive = !burst.isActive;
+
+    if (burst.isActive) {
+      burst.setAlpha(0.26);
+
+      burst.nextStateAt =
+        scene.time.now + burst.activeDuration;
+
+    } else {
+      burst.setAlpha(0.04);
+
+      burst.nextStateAt =
+        scene.time.now + burst.inactiveDuration;
+    }
+  });
+}
+// =========================
+// LEVEL 4: CREATE SECRET FAN LAUNCHER
+// =========================
+function createLevel4SecretFanLauncher(
+  scene,
+  x,
+  y,
+  width = 170,
+  height = 220
+) {
+
+  const launcher = scene.add.rectangle(
+    x,
+    y,
+    width,
+    height,
+    0x44ccff,
+    0.18
+  );
+
+  launcher.setDepth(6);
+
+  scene.physics.add.existing(
+    launcher,
+    true
+  );
+
+  launcher.nextLaunchAt = 0;
+
+  scene.physics.add.overlap(
+    player,
+    launcher,
+    (playerObject, launcherObject) => {
+
+      if (
+        playerIsDead ||
+        scene.time.now < launcherObject.nextLaunchAt
+      ) {
+        return;
+      }
+
+      launcherObject.nextLaunchAt =
+        scene.time.now + 1200;
+
+      playerObject.setVelocityY(-1050);
+      playerObject.setVelocityX(90);
+    },
+    null,
+    scene
+  );
+
+  return launcher;
+}
+// =========================
+// LEVEL 4: CREATE SIDEWAYS FAN ZONE
+// =========================
+function createLevel4SideFan(
+  scene,
+  x,
+  y,
+  width,
+  height,
+  pushDirection = 1,
+  pushStrength = 260,
+  options = {}
+) {
+
+  const {
+    timed = false,
+    activeDuration = 1500,
+    inactiveDuration = 2000,
+    startOffset = 0,
+    blastMode = false,
+    coverObjects = [],
+    shadowDistance = 240
+  } = options;
+
+  const fanZone = scene.add.rectangle(
+    x,
+    y,
+    width,
+    height,
+    pushDirection === 1
+      ? 0x44ccff
+      : 0xff8844,
+    timed ? 0.03 : 0.16
+  );
+
+  fanZone.setDepth(6);
+
+  scene.physics.add.existing(
+    fanZone,
+    true
+  );
+
+  fanZone.pushDirection = pushDirection;
+  fanZone.pushStrength = pushStrength;
+
+  fanZone.timed = timed;
+  fanZone.isBlowing = !timed;
+
+  fanZone.activeDuration = activeDuration;
+  fanZone.inactiveDuration = inactiveDuration;
+
+  fanZone.nextStateAt =
+    scene.time.now +
+    inactiveDuration +
+    startOffset;
+
+  fanZone.blastMode = blastMode;
+  fanZone.coverObjects = coverObjects;
+  fanZone.shadowDistance = shadowDistance;
+
+  // =========================
+  // WIND ANIMATION STATE
+  // =========================
+  fanZone.windStage =
+    timed && blastMode
+      ? 'calm'
+      : 'full';
+
+  fanZone.windFrameIndex = 0;
+  fanZone.windNextFrameAt = 0;
+
+  fanZone.preFrameDuration = 240;
+  fanZone.medFrameDuration = 200;
+  fanZone.heavyFrameDuration = 170;
+  fanZone.fullFrameDuration = 130;
+
+  fanZone.windVisuals = [];
+
+  // Only the large timed blast gets visual wind FX.
+  if (
+    timed &&
+    blastMode
+  ) {
+
+// =========================
+// REPEATING WIND VISUALS
+// =========================
+
+// Keep debris small enough to look believable.
+const windVisualScale = 0.22;
+
+// Get the REAL width of the wind artwork.
+const windSource =
+  scene.textures
+    .get('pregust1')
+    .getSourceImage();
+
+const windPieceWidth =
+  windSource.width *
+  windVisualScale;
+
+// Slight overlap prevents tiny seams between copies.
+const windSpacing =
+  windPieceWidth - 12;
+
+// Bounds of the full wind hazard.
+const windLeft =
+  x - (width / 2);
+
+const windRight =
+  x + (width / 2);
+
+fanZone.windVisuals = [];
+
+// =========================
+// LOWER WIND ROW
+// Player-level debris
+// =========================
+for (
+  let windX = windLeft;
+  windX <= windRight + windPieceWidth;
+  windX += windSpacing
+) {
+
+  const windVisual =
+    scene.add.image(
+      windX,
+      y + 105,
+      'pregust1'
+    );
+
+  windVisual.setOrigin(0, 0.5);
+
+  windVisual.setDepth(7);
+
+  windVisual.setScale(
+    windVisualScale
+  );
+
+  windVisual.setVisible(false);
+
+  fanZone.windVisuals.push(
+    windVisual
+  );
+}
+
+// =========================
+// UPPER WIND ROW
+// Shows wind continuing ABOVE cover walls
+// =========================
+for (
+  let windX = windLeft;
+  windX <= windRight + windPieceWidth;
+  windX += windSpacing
+) {
+
+  const windVisual =
+    scene.add.image(
+      windX,
+      y - 55,
+      'pregust1'
+    );
+
+  windVisual.setOrigin(0, 0.5);
+
+  windVisual.setDepth(7);
+
+  windVisual.setScale(
+    windVisualScale
+  );
+
+  windVisual.setVisible(false);
+
+  fanZone.windVisuals.push(
+    windVisual
+  );
+}
+
+} // closes if (timed && blastMode)
+
+level4SideFanZones.push(fanZone);
+
+return fanZone;
+
+} // closes createLevel4SideFan()
+
+
+// =========================
+// LEVEL 4: UPDATE WIND VISUAL
+// =========================
+function updateLevel4WindVisual(
+  scene,
+  fanZone
+) {
+
+  if (
+    !fanZone ||
+    !fanZone.windVisuals ||
+    fanZone.windVisuals.length === 0
+  ) {
+    return;
+  }
+
+  const now = scene.time.now;
+
+  const preFrames = [
+    'pregust1',
+    'pregust2',
+    'pregust3',
+    'pregust4'
+  ];
+
+  const medFrames = [
+    'medgust1',
+    'medgust2',
+    'medgust3',
+    'medgust4'
+  ];
+
+  const heavyFrames = [
+    'heavygust1',
+    'heavygust2',
+    'heavygust3',
+    'heavygust4'
+  ];
+
+  const fullFrames = [
+    'full1',
+    'full2',
+    'full3',
+    'full4'
+  ];
+
+  // =========================
+  // CALM
+  // =========================
+  if (fanZone.windStage === 'calm') {
+
+    fanZone.windVisuals.forEach(
+      windVisual => {
+        windVisual.setVisible(false);
+      }
+    );
+
+    return;
+  }
+
+  fanZone.windVisuals.forEach(
+    windVisual => {
+      windVisual.setVisible(true);
+    }
+  );
+
+  if (
+    now <
+    fanZone.windNextFrameAt
+  ) {
+    return;
+  }
+
+  // =========================
+  // PRE-GUST
+  // =========================
+  if (fanZone.windStage === 'pre') {
+
+    const texture =
+      preFrames[
+        fanZone.windFrameIndex
+      ];
+
+    fanZone.windVisuals.forEach(
+      windVisual => {
+        windVisual.setTexture(texture);
+      }
+    );
+
+    fanZone.windFrameIndex++;
+
+    fanZone.windNextFrameAt =
+      now +
+      fanZone.preFrameDuration;
+
+    if (
+      fanZone.windFrameIndex >=
+      preFrames.length
+    ) {
+      fanZone.windFrameIndex = 0;
+      fanZone.windStage = 'medium';
+    }
+
+    return;
+  }
+
+  // =========================
+  // MEDIUM GUST
+  // =========================
+  if (fanZone.windStage === 'medium') {
+
+    const texture =
+      medFrames[
+        fanZone.windFrameIndex
+      ];
+
+    fanZone.windVisuals.forEach(
+      windVisual => {
+        windVisual.setTexture(texture);
+      }
+    );
+
+    fanZone.windFrameIndex++;
+
+    fanZone.windNextFrameAt =
+      now +
+      fanZone.medFrameDuration;
+
+    if (
+      fanZone.windFrameIndex >=
+      medFrames.length
+    ) {
+      fanZone.windFrameIndex = 0;
+      fanZone.windStage = 'heavy';
+    }
+
+    return;
+  }
+
+  // =========================
+  // HEAVY GUST WARNING
+  // =========================
+  if (fanZone.windStage === 'heavy') {
+
+    const texture =
+      heavyFrames[
+        fanZone.windFrameIndex
+      ];
+
+    fanZone.windVisuals.forEach(
+      windVisual => {
+        windVisual.setTexture(texture);
+      }
+    );
+
+    fanZone.windFrameIndex++;
+
+    fanZone.windNextFrameAt =
+      now +
+      fanZone.heavyFrameDuration;
+
+    if (
+      fanZone.windFrameIndex >=
+      heavyFrames.length
+    ) {
+      fanZone.windFrameIndex = 0;
+      fanZone.windStage = 'full';
+
+      // Actual wind physics begin now.
+      fanZone.isBlowing = true;
+
+      fanZone.nextStateAt =
+        now +
+        fanZone.activeDuration;
+    }
+
+    return;
+  }
+
+  // =========================
+  // FULL GUST
+  // =========================
+  if (fanZone.windStage === 'full') {
+
+    const texture =
+      fullFrames[
+        fanZone.windFrameIndex
+      ];
+
+    fanZone.windVisuals.forEach(
+      windVisual => {
+        windVisual.setTexture(texture);
+      }
+    );
+
+    fanZone.windFrameIndex =
+      (
+        fanZone.windFrameIndex + 1
+      ) %
+      fullFrames.length;
+
+    fanZone.windNextFrameAt =
+      now +
+      fanZone.fullFrameDuration;
+  }
+}
+
+
+// =========================
+// LEVEL 4: UPDATE SIDEWAYS FANS
+// =========================
+function updateLevel4SideFans(scene) {
+
+  if (
+    !player ||
+    !player.body ||
+    playerIsDead
+  ) {
+    return;
+  }
+
+  level4SideFanZones.forEach(
+    fanZone => {
+
+      if (
+        !fanZone ||
+        !fanZone.active ||
+        !fanZone.body
+      ) {
+        return;
+      }
+
+      // =========================
+      // TIMED MAJOR WIND BLAST
+      // =========================
+      if (
+        fanZone.timed &&
+        fanZone.blastMode
+      ) {
+
+        // Calm period is over.
+        // Begin visual warning.
+        if (
+          fanZone.windStage === 'calm' &&
+          scene.time.now >=
+            fanZone.nextStateAt
+        ) {
+
+          fanZone.windStage = 'pre';
+          fanZone.windFrameIndex = 0;
+          fanZone.windNextFrameAt =
+            scene.time.now;
+
+          fanZone.isBlowing = false;
+        }
+
+        // Full blast duration is over.
+        if (
+          fanZone.windStage === 'full' &&
+          fanZone.isBlowing &&
+          scene.time.now >=
+            fanZone.nextStateAt
+        ) {
+
+          fanZone.isBlowing = false;
+
+          fanZone.windStage = 'calm';
+          fanZone.windFrameIndex = 0;
+
+          fanZone.nextStateAt =
+            scene.time.now +
+            fanZone.inactiveDuration;
+        }
+
+        updateLevel4WindVisual(
+          scene,
+          fanZone
+        );
+      }
+
+      // Warning stages have NO physical wind force.
+      if (!fanZone.isBlowing) {
+        return;
+      }
+
+      const playerInsideFan =
+        player.body.right >
+          fanZone.body.left &&
+        player.body.left <
+          fanZone.body.right &&
+        player.body.bottom >
+          fanZone.body.top &&
+        player.body.top <
+          fanZone.body.bottom;
+
+      if (!playerInsideFan) {
+        return;
+      }
+
+      // =========================
+      // ELEVATOR PROTECTION
+      // =========================
+      const playerStandingOnElevator =
+        level4Elevators.some(
+          elevator => {
+
+            if (
+              !elevator ||
+              !elevator.body ||
+              !elevator.active
+            ) {
+              return false;
+            }
+
+            const horizontalOverlap =
+              player.body.right >
+                elevator.body.left &&
+              player.body.left <
+                elevator.body.right;
+
+            const standingOnTop =
+              player.body.bottom >=
+                elevator.body.top - 8 &&
+              player.body.bottom <=
+                elevator.body.top + 18;
+
+            return (
+              horizontalOverlap &&
+              standingOnTop
+            );
+          }
+        );
+
+      if (playerStandingOnElevator) {
+        return;
+      }
+
+      // =========================
+      // WIND COVER / SHADOWS
+      // =========================
+      let playerProtected = false;
+
+      fanZone.coverObjects.forEach(
+        cover => {
+
+          if (
+            playerProtected ||
+            !cover ||
+            !cover.body
+          ) {
+            return;
+          }
+
+          const verticalOverlap =
+            player.body.bottom >
+              cover.body.top &&
+            player.body.top <
+              cover.body.bottom;
+
+          if (!verticalOverlap) {
+            return;
+          }
+
+          // Wind blowing LEFT:
+          // safe area is immediately LEFT of wall.
+          if (
+            fanZone.pushDirection === -1
+          ) {
+
+            const shadowLeft =
+              cover.body.left -
+              fanZone.shadowDistance;
+
+            playerProtected =
+              player.body.right <=
+                cover.body.left + 15 &&
+              player.body.right >=
+                shadowLeft;
+          }
+
+          // Wind blowing RIGHT:
+          // safe area is immediately RIGHT of wall.
+          if (
+            fanZone.pushDirection === 1
+          ) {
+
+            const shadowRight =
+              cover.body.right +
+              fanZone.shadowDistance;
+
+            playerProtected =
+              player.body.left >=
+                cover.body.right - 15 &&
+              player.body.left <=
+                shadowRight;
+          }
+        }
+      );
+
+      if (playerProtected) {
+        return;
+      }
+
+      // =========================
+      // APPLY WIND FORCE
+      // =========================
+      if (fanZone.blastMode) {
+
+        player.setVelocityX(
+          fanZone.pushDirection *
+          fanZone.pushStrength
+        );
+
+      } else {
+
+        player.setVelocityX(
+          player.body.velocity.x +
+          fanZone.pushDirection *
+          fanZone.pushStrength *
+          0.075
+        );
+      }
+    }
+  );
+}
+// =========================
+// LEVEL 4: CREATE OFFICE ROOM
+// =========================
+function createLevel4OfficeRoom(
+  scene,
+  x,
+  y,
+  width,
+  height,
+  label
+) {
+
+  const roomBack = scene.add.rectangle(
+    x,
+    y - height / 2,
+    width,
+    height,
+    0x182433,
+    0.96
+  );
+
+  roomBack.setDepth(1);
+
+  const floor = createLevel4Platform(
+    scene,
+    x,
+    y,
+    width,
+    0x5d6873,
+    label
+  );
+
+  // Cubicle placeholders.
+  for (
+    let cubicleX = x - width / 2 + 120;
+    cubicleX < x + width / 2 - 80;
+    cubicleX += 210
+  ) {
+    const cubicle = scene.add.rectangle(
+      cubicleX,
+      y - 65,
+      150,
+      95,
+      0x334455,
+      1
+    );
+
+    cubicle.setDepth(2);
+  }
+
+  return floor;
+}
+
+// =========================
+// LEVEL 4: CREATE INTERIOR OFFICE FLOOR
+// =========================
+function createLevel4InteriorFloor(
+  scene,
+  x,
+  y,
+  width,
+  textureKey,
+  options = {}
+) {
+
+  const {
+    artHeight = 500,
+    artOffsetY = 0
+  } = options;
+
+  const officeArt = scene.add.image(
+    x,
+    y + artOffsetY,
+    textureKey
+  );
+
+  officeArt.setOrigin(0.5, 1);
+  officeArt.setDepth(3);
+
+  officeArt.setDisplaySize(
+    width,
+    artHeight
+  );
+
+  const floor = createLevel4Platform(
+    scene,
+    x,
+    y,
+    width,
+    0x59636b,
+    ''
+  );
+
+  floor.setVisible(false);
+
+  return floor;
+}
+// =========================
+// LEVEL 4: CREATE ELEVATOR
+// =========================
+function createLevel4Elevator(
+  scene,
+  x,
+  bottomY,
+  topY,
+  type = 'normal'
+) {
+
+  const settings = {
+    normal: {
+      width: 260,
+      speed: 90,
+      waitTime: 2200,
+      color: 0x33aa55
+    },
+
+    express: {
+      width: 210,
+      speed: 220,
+      waitTime: 650,
+      color: 0x2299ff
+    },
+
+    freight: {
+      width: 320,
+      speed: 60,
+      waitTime: 2600,
+      color: 0xcc4422
+    }
+  }[type];
+
+  const elevator = scene.add.rectangle(
+  x,
+  bottomY,
+  settings.width,
+  34,
+  settings.color,
+  1
+);
+
+// Invisible moving physics platform.
+elevator.setVisible(false);
+elevator.setDepth(8);
+
+const ELEVATOR_ART_OFFSET_Y = -42;
+
+const elevatorVisual = scene.add.image(
+  x,
+  bottomY + ELEVATOR_ART_OFFSET_Y,
+  'officePainterPlatform'
+);
+
+elevatorVisual.setOrigin(0.5, 0.5);
+elevatorVisual.setDepth(8);
+elevatorVisual.setDisplaySize(
+  settings.width,
+  150
+);
+
+elevator.visual = elevatorVisual;
+elevator.visualOffsetY = ELEVATOR_ART_OFFSET_Y;
+
+  scene.physics.add.existing(elevator);
+
+  elevator.body.allowGravity = false;
+  elevator.body.immovable = true;
+  elevator.body.moves = true;
+
+  elevator.bottomY = bottomY;
+  elevator.topY = topY;
+  elevator.speed = settings.speed;
+  elevator.waitTime = settings.waitTime;
+  elevator.direction = -1;
+  elevator.state = 'waiting';
+  elevator.moveAgainAt = scene.time.now + settings.waitTime;
+  elevator.elevatorType = type;
+
+  scene.physics.add.collider(player, elevator);
+  scene.physics.add.collider(casings, elevator);
+
+  level4Elevators.push(elevator);
+
+  return elevator;
+}
+// =========================
+// LEVEL 4: UPDATE ELEVATORS
+// =========================
+function updateLevel4Elevators(scene) {
+
+  level4Elevators.forEach(elevator => {
+
+    if (!elevator || !elevator.body) {
+      return;
+    }
+if (elevator.visual) {
+  elevator.visual.setPosition(
+    elevator.x,
+    elevator.y + elevator.visualOffsetY
+  );
+}
+    if (elevator.state === 'waiting') {
+
+      elevator.body.setVelocityY(0)
+
+      if (scene.time.now >= elevator.moveAgainAt) {
+        elevator.state = 'moving';
+      }
+
+      return;
+    }
+
+   elevator.body.setVelocityY(
+      elevator.speed * elevator.direction
+    );
+
+    // Reached top.
+    if (
+      elevator.direction === -1 &&
+      elevator.y <= elevator.topY
+    ) {
+      elevator.setPosition(elevator.x, elevator.topY);
+      elevator.body.reset(elevator.x, elevator.topY);
+      if (elevator.visual) {
+  elevator.visual.setPosition(
+    elevator.x,
+    elevator.topY + elevator.visualOffsetY
+  );
+}
+
+     elevator.body.setVelocityY(0);
+      elevator.direction = 1;
+      elevator.state = 'waiting';
+      elevator.moveAgainAt =
+        scene.time.now + elevator.waitTime;
+
+      return;
+    }
+
+    // Reached bottom.
+    if (
+  elevator.direction === 1 &&
+  elevator.y >= elevator.bottomY
+) {
+  elevator.setPosition(elevator.x, elevator.bottomY);
+  elevator.body.reset(elevator.x, elevator.bottomY);
+
+  if (elevator.visual) {
+  elevator.visual.setPosition(
+    elevator.x,
+    elevator.bottomY + elevator.visualOffsetY
+  );
+}
+
+  elevator.body.setVelocityY(0);
+  elevator.direction = -1;
+  elevator.state = 'waiting';
+  elevator.moveAgainAt =
+    scene.time.now + elevator.waitTime;
+}
+  });
+}
+
+// =========================
+// LEVEL 4: CREATE MOVING CAR
+// =========================
+function createLevel4Car(
+  scene,
+  startX,
+  y,
+  direction = 1,
+  speed = 260,
+  textureKey = 'cityCar'
+) {
+
+  const car = scene.physics.add.sprite(
+    startX,
+    y,
+    textureKey
+  );
+
+  car.setScale(0.32);
+  car.setDepth(14);
+  car.body.allowGravity = false;
+
+  car.direction = direction;
+  car.speed = speed;
+  car.vehicleTexture = textureKey;
+
+  car.body.setSize(
+    car.width * 0.72,
+    car.height * 0.42
+  );
+
+  car.body.setOffset(
+    car.width * 0.14,
+    car.height * 0.48
+  );
+
+ const assetFacesRightByDefault =
+  textureKey === 'cityCab' ||
+  textureKey === 'cityPolice';
+
+car.setFlipX(
+  assetFacesRightByDefault
+    ? direction === 1
+    : direction === -1
+);
+
+  scene.physics.add.overlap(
+    player,
+    car,
+    hurtPlayer,
+    null,
+    scene
+  );
+
+  level4Cars.push(car);
+
+  return car;
+}
+
+
+// =========================
+// LEVEL 4: UPDATE MOVING CARS
+// =========================
+function updateLevel4Cars() {
+
+  level4Cars.forEach(car => {
+
+    if (!car || !car.active) {
+      return;
+    }
+
+    car.setVelocityX(car.speed * car.direction);
+
+    // Right-moving cars return inside the parking garage tunnel.
+    if (
+      car.direction === 1 &&
+      car.x > LEVEL4_WIDTH + 350
+    ) {
+      car.x = 180;
+    }
+
+    // Left-moving cars return from the far-right tunnel.
+    if (
+      car.direction === -1 &&
+      car.x < -350
+    ) {
+      car.x = LEVEL4_WIDTH + 350;
+    }
+  });
+}
+// =========================
+// LEVEL 4: CREATE FLOOR NUMBER LABEL
+// =========================
+function createLevel4FloorLabel(scene, floorNumber, y) {
+
+  const label = scene.add.text(
+    55,
+    y - 30,
+    'FLOOR ' + floorNumber,
+    {
+      fontSize: '22px',
+      fill: '#55ff44',
+      stroke: '#000000',
+      strokeThickness: 4
+    }
+  );
+
+  label.setOrigin(0, 1);
+  label.setDepth(50);
+}
+
+
+// =========================
+// LEVEL 4: BUILD CORPORATE TOWER
+// =========================
+function createLevel4Tower(scene) {
+
+  const floorY = floorNumber =>
+    LEVEL4_STREET_Y -
+    ((floorNumber - 1) * LEVEL4_FLOOR_SPACING);
+
+  // =========================================================
+  // STREET LEVEL
+  // =========================================================
+  level4Street = scene.add.rectangle(
+  LEVEL4_WIDTH / 2,
+  LEVEL4_STREET_Y + 60,
+  LEVEL4_WIDTH,
+  200,
+  0x252525,
+  1
+);
+
+// Physics only. The officeStreet asset is the visible street.
+level4Street.setVisible(false);
+
+scene.physics.add.existing(level4Street, true);
+
+  scene.physics.add.collider(player, level4Street);
+  scene.physics.add.collider(casings, level4Street);
+
+  createLevel4FloorLabel(scene, 1, floorY(1));
+ 
+
+
+// =========================================================
+// PARKING GARAGE OPENING
+// =========================================================
+
+// Dark tunnel that cars emerge from.
+const garageTunnel = scene.add.rectangle(
+  360,
+  LEVEL4_STREET_Y - 125,
+  720,
+  250,
+  0x050505,
+  1
+);
+
+garageTunnel.setDepth(2);
+garageTunnel.setVisible(false);
+
+// Parking garage roof — safe player spawn.
+// Left edge remains at x:30.
+// Right edge now ends at x:1025, matching the garage artwork.
+// Starting roof ends near the tunnel's upper corner.
+const garageRoof = createLevel4Platform(
+  scene,
+  395,
+  LEVEL4_STREET_Y - 415,
+  730,
+  0x4f5963,
+  ''
+);
+// The garage artwork already contains its own roof.
+// Keep the collider, but remove the generic exterior platform artwork.
+if (garageRoof.visual) {
+  garageRoof.visual.destroy();
+  garageRoof.visual = null;
+}
+// Back wall of the parking garage.
+const garageBackWall = scene.add.rectangle(
+  65,
+  LEVEL4_STREET_Y - 435,
+  40,
+  250,
+  0x343b42,
+  1
+);
+
+garageBackWall.setDepth(4);
+garageBackWall.setVisible(false);
+
+scene.physics.add.existing(garageBackWall, true);
+scene.physics.add.collider(player, garageBackWall);
+
+// Invisible wall across the street-level tunnel entrance.
+// It stops below the roof platform, so the player can still
+// walk across the top toward the elevator.
+const garageEntranceBlocker = scene.add.rectangle(
+  715,
+  LEVEL4_STREET_Y - 175,
+  36,
+  240,
+  0xff0000,
+  1
+);
+
+garageEntranceBlocker.setVisible(false);
+garageEntranceBlocker.setDepth(17);
+
+scene.physics.add.existing(
+  garageEntranceBlocker,
+  true
+);
+
+scene.physics.add.collider(
+  player,
+  garageEntranceBlocker
+);
+
+scene.physics.add.collider(
+  casings,
+  garageEntranceBlocker
+);
+ // =========================================================
+// GARAGE ROOF TO FIRST ELEVATOR JUMP
+// =========================================================
+
+// Invisible physics platform.
+// First danger tutorial.
+// The platform shakes after landing, drops, then resets.
+const garageJumpPlatform = createLevel4DropPlatform(
+  scene,
+  990,
+  LEVEL4_STREET_Y - 465,
+  280,
+  {
+    shakeDuration: 750,
+    resetDelay: 2200,
+    fallSpeed: 500
+  }
+);
+
+garageJumpPlatform.setVisible(false);
+
+// City railing artwork used as the visible jump platform.
+const garageJumpPlatformVisual = scene.add.image(
+  990,
+  LEVEL4_STREET_Y - 460,
+  'cityRailing'
+);
+
+garageJumpPlatformVisual.setOrigin(0.5, 0.5);
+garageJumpPlatformVisual.setDepth(7);
+
+garageJumpPlatformVisual.setDisplaySize(
+  280,
+  90
+);
+
+// Attach the visual only after it exists.
+garageJumpPlatform.visual =
+  garageJumpPlatformVisual;
+
+// First elevator shaft.
+const firstElevatorShaft = scene.add.rectangle(
+  1280,
+  (
+    (LEVEL4_STREET_Y - 70) +
+    (floorY(3) - 45)
+  ) / 2,
+  310,
+  Math.abs(
+    (LEVEL4_STREET_Y - 70) -
+    (floorY(3) - 45)
+  ) + 120,
+  0x132219,
+  0.8
+);
+
+firstElevatorShaft.setDepth(2);
+
+// First normal elevator.
+const firstElevator = createLevel4Elevator(
+  scene,
+  1280,
+  LEVEL4_STREET_Y - 70,
+  floorY(3) - 45,
+  'normal'
+);
+
+// Give the player time to board.
+firstElevator.state = 'waiting';
+firstElevator.direction = -1;
+firstElevator.moveAgainAt = scene.time.now + 3500;
+// =========================================================
+// NEW LEVEL 4 TOWER ROUTE
+// Everything below the first elevator is one deliberate
+// left-right climbing route. Every platform has a purpose.
+// =========================================================
+
+
+// =========================================================
+// ROOM 2 — OFFICE ENTRY / FLOORS 2–3
+// First elevator arrives on the LEFT.
+// Player must cross to the RIGHT to continue.
+// =========================================================
+createLevel4FloorLabel(scene, 2, floorY(2));
+createLevel4FloorLabel(scene, 3, floorY(3));
+
+// Safe elevator arrival landing.
+createLevel4Platform(
+  scene,
+  1280,
+  floorY(3),
+  620,
+  0x44505c,
+  ''
+);
+
+// Two clear jumps toward the right side.
+createLevel4Platform(
+  scene,
+  1850,
+  floorY(3) - 120,
+  320,
+  0x526170,
+  ''
+);
+
+createLevel4Platform(
+  scene,
+  2300,
+  floorY(3) - 240,
+  280,
+  0x526170,
+  ''
+);
+
+// Elevator is intentionally on the opposite side.
+const entryElevator = createLevel4Elevator(
+  scene,
+  2700,
+  floorY(3) - 285,
+  floorY(5) - 45,
+  'normal'
+);
+
+entryElevator.state = 'waiting';
+entryElevator.direction = -1;
+entryElevator.moveAgainAt = scene.time.now + 1800;
+// =========================================================
+// ROOM 2 ENEMIES
+// =========================================================
+
+spawnBat(
+  scene,
+  1550,
+  floorY(3) - 230,
+  1250,
+  1900,
+  1
+);
+
+spawnBat(
+  scene,
+  2250,
+  floorY(3) - 360,
+  2000,
+  2550,
+  -1
+);
+
+// =========================================================
+// ROOM 3 — HVAC WIND TUTORIAL / FLOORS 4–5
+// Player arrives on the RIGHT and must move LEFT.
+// =========================================================
+createLevel4FloorLabel(scene, 4, floorY(4));
+createLevel4FloorLabel(scene, 5, floorY(5));
+
+// Right arrival platform.
+createLevel4Platform(
+  scene,
+  2650,
+  floorY(5),
+  650,
+  0x4f5559,
+  ''
+);
+
+// Middle wind platform.
+createLevel4Platform(
+  scene,
+  1800,
+  floorY(5) - 90,
+  500,
+  0x4f5559,
+  ''
+);
+
+// Left exit platform.
+createLevel4Platform(
+  scene,
+  850,
+  floorY(5),
+  700,
+  0x4f5559,
+  ''
+);
+
+// Exit elevator stays on the far LEFT.
+const tutorialExitElevator = createLevel4Elevator(
+  scene,
+  350,
+  floorY(5) - 45,
+  floorY(7) - 45,
+  'normal'
+);
+
+tutorialExitElevator.state = 'waiting';
+tutorialExitElevator.direction = -1;
+tutorialExitElevator.moveAgainAt = scene.time.now + 2000;
+
+// =========================================================
+// ROOM 3 ENEMIES
+// =========================================================
+
+spawnBat(
+  scene,
+  2150,
+  floorY(5) - 240,
+  1850,
+  2500,
+  -1
+);
+
+spawnJunkFoodDrone(
+  scene,
+  1200,
+  floorY(5) - 190,
+  {
+    leftBound: 950,
+    rightBound: 1450,
+    direction: 1,
+    shootCooldown: 2400
+  }
+);
+// =========================================================
+// ROOM 4 — FIRE ESCAPE PRECISION CLIMB / FLOORS 6–7
+// Arrival LEFT. Required route crosses all the way RIGHT.
+// =========================================================
+createLevel4FloorLabel(scene, 6, floorY(6));
+createLevel4FloorLabel(scene, 7, floorY(7));
+
+createLevel4Platform(
+  scene,
+  450,
+  floorY(7),
+  600,
+  0x3e5668,
+  ''
+);
+
+createLevel4Platform(
+  scene,
+  1050,
+  floorY(7) - 145,
+  260,
+  0x3e5668,
+  ''
+);
+
+// First collapsing platform.
+createLevel4DropPlatform(
+  scene,
+  1500,
+  floorY(7) - 280,
+  240,
+  {
+    shakeDuration: 700,
+    resetDelay: 2400,
+    fallSpeed: 520
+  }
+);
+
+createLevel4Platform(
+  scene,
+  1950,
+  floorY(7) - 420,
+  240,
+  0x3e5668,
+  ''
+);
+
+createLevel4Platform(
+  scene,
+  2425,
+  floorY(7) - 545,
+  300,
+  0x3e5668,
+  ''
+);
+
+// Far-right elevator rewards completing the whole crossing.
+const fireEscapeElevator = createLevel4Elevator(
+  scene,
+  2800,
+  floorY(7) - 590,
+  floorY(9) - 45,
+  'express'
+);
+
+fireEscapeElevator.state = 'waiting';
+fireEscapeElevator.direction = -1;
+fireEscapeElevator.moveAgainAt = scene.time.now + 1700;
+
+// =========================================================
+// ROOM 4 ENEMIES
+// =========================================================
+
+spawnBat(
+  scene,
+  900,
+  floorY(7) - 280,
+  650,
+  1200,
+  1
+);
+
+spawnBat(
+  scene,
+  2050,
+  floorY(7) - 560,
+  1750,
+  2350,
+  -1
+);
+// =========================================================
+// ROOM 5 — MARKETING OFFICE / FLOOR 9
+// First long interior combat floor.
+// Player enters RIGHT and exits LEFT.
+// =========================================================
+createLevel4FloorLabel(scene, 8, floorY(8));
+createLevel4FloorLabel(scene, 9, floorY(9));
+
+createLevel4InteriorFloor(
+  scene,
+  1500,
+  floorY(9),
+  2800,
+  'officeOpen02',
+  {
+    artHeight: 800,
+artOffsetY: 238
+  }
+);
+// =========================================================
+// FLOOR 9 — OFFICE ENEMIES
+// Mostly flying enemies.
+// Future manager enemy will be added later.
+// =========================================================
+
+// Left-side bat patrol.
+spawnBat(
+  scene,
+  550,
+  floorY(9) - 220,
+  300,
+  900,
+  1
+);
+
+// Mid-office bat patrol.
+spawnBat(
+  scene,
+  1200,
+  floorY(9) - 260,
+  900,
+  1500,
+  -1
+);
+
+// Right-middle bat patrol.
+spawnBat(
+  scene,
+  1850,
+  floorY(9) - 210,
+  1550,
+  2150,
+  1
+);
+
+// Far-right bat patrol.
+spawnBat(
+  scene,
+  2450,
+  floorY(9) - 250,
+  2200,
+  2725,
+  -1
+);
+
+// One slower shooting drone in the middle.
+// Gives the room something besides contact-only flying enemies.
+spawnJunkFoodDrone(
+  scene,
+  1600,
+  floorY(9) - 275,
+  {
+    leftBound: 1350,
+    rightBound: 1850,
+    direction: 1,
+    shootCooldown: 2200
+  }
+);
+// Exit placed on opposite side from arrival.
+const marketingExitElevator = createLevel4Elevator(
+  scene,
+  350,
+  floorY(9) - 45,
+  floorY(11) - 45,
+  'freight'
+);
+
+marketingExitElevator.state = 'waiting';
+marketingExitElevator.direction = -1;
+marketingExitElevator.moveAgainAt = scene.time.now + 2200;
+
+
+// =========================================================
+// ROOM 6 — WIND-SHADOW TUNNEL / FLOORS 10–11
+// Player must cross LEFT to RIGHT.
+// Obstacles provide safe wind shadows.
+// Crouching will later reduce wind force.
+// =========================================================
+createLevel4FloorLabel(scene, 10, floorY(10));
+createLevel4FloorLabel(scene, 11, floorY(11));
+
+// Continuous tunnel floor.
+createLevel4Platform(
+  scene,
+  1550,
+  floorY(11),
+  2700,
+  0x4f5559,
+  ''
+);
+// =========================================================
+// FLOOR 11 — REPEATING CATWALK FLOOR ART
+// =========================================================
+
+const floor11CatwalkSource =
+  scene.textures
+    .get('officePlatform')
+    .getSourceImage();
+
+const floor11CatwalkHeight = 90;
+
+// Scale based on the same visual height used by normal
+// exterior platforms.
+const floor11CatwalkScale =
+  floor11CatwalkHeight /
+  floor11CatwalkSource.height;
+
+const floor11CatwalkPieceWidth =
+  floor11CatwalkSource.width *
+  floor11CatwalkScale;
+
+// Slight overlap prevents visible seams.
+const floor11CatwalkStep =
+  floor11CatwalkPieceWidth - 8;
+
+const floor11Left = 1550 - (2700 / 2);
+const floor11Right = 1550 + (2700 / 2);
+
+for (
+  let catwalkX = floor11Left;
+  catwalkX < floor11Right;
+  catwalkX += floor11CatwalkStep
+) {
+
+  const catwalkPiece = scene.add.image(
+    catwalkX,
+    floorY(11) - 8,
+    'officePlatform'
+  );
+
+  catwalkPiece.setOrigin(0, 0.5);
+  catwalkPiece.setScale(floor11CatwalkScale);
+  catwalkPiece.setDepth(14);
+}
+// Small obstacles that visually divide the wind tunnel.
+const windCover1 = scene.add.rectangle(
+  850,
+  floorY(11) - 80,
+  90,
+  160,
+  0x394754,
+  1
+);
+
+const windCover2 = scene.add.rectangle(
+  1500,
+  floorY(11) - 80,
+  90,
+  160,
+  0x394754,
+  1
+);
+
+const windCover3 = scene.add.rectangle(
+  2150,
+  floorY(11) - 80,
+  90,
+  160,
+  0x394754,
+  1
+);
+
+[
+  windCover1,
+  windCover2,
+  windCover3
+].forEach(cover => {
+  cover.setDepth(8);
+  scene.physics.add.existing(cover, true);
+  scene.physics.add.collider(player, cover);
+  scene.physics.add.collider(casings, cover);
+});
+
+// One enormous timed blast crosses the entire exposed floor.
+// Wind travels RIGHT TO LEFT. The walls create safe shadows
+// immediately on their left sides.
+createLevel4SideFan(
+  scene,
+  1600,
+  floorY(11) - 180,
+  2900,
+  360,
+  -1,
+  1250,
+  {
+    timed: true,
+    blastMode: true,
+
+    // Warning/rest period followed by a hard blast.
+    inactiveDuration: 1400,
+activeDuration: 1800,
+startOffset: 800,
+
+    coverObjects: [
+      windCover1,
+      windCover2,
+      windCover3
+    ],
+
+    shadowDistance: 260
+  }
+);
+
+// Exit elevator on the far RIGHT.
+const windTunnelElevator = createLevel4Elevator(
+  scene,
+  2875,
+  floorY(11) - 45,
+  floorY(13) - 45,
+  'normal'
+);
+
+windTunnelElevator.state = 'waiting';
+windTunnelElevator.direction = -1;
+windTunnelElevator.moveAgainAt = scene.time.now + 1800;
+
+
+// =========================================================
+// ROOM 7 — MAINTENANCE SHAFT / FLOORS 12–13
+// Moving elevators and collapsing platforms.
+// Arrival RIGHT. Exit LEFT.
+// =========================================================
+createLevel4FloorLabel(scene, 12, floorY(12));
+createLevel4FloorLabel(scene, 13, floorY(13));
+
+createLevel4Platform(
+  scene,
+  2700,
+  floorY(13),
+  500,
+  0x59636b,
+  ''
+);
+
+// First temporary landing.
+createLevel4DropPlatform(
+  scene,
+  2200,
+  floorY(13) - 155,
+  240,
+  {
+    shakeDuration: 600,
+    resetDelay: 2400,
+    fallSpeed: 560
+  }
+);
+
+// Small normal landing.
+createLevel4Platform(
+  scene,
+  1750,
+  floorY(13) - 315,
+  220,
+  0x59636b,
+  ''
+);
+
+// Second temporary landing.
+// Longer warning because the player must land, stabilize,
+// then make the final jump to the left recovery ledge.
+createLevel4DropPlatform(
+  scene,
+  1275,
+  floorY(13) - 470,
+  220,
+  {
+    shakeDuration: 1100,
+    resetDelay: 2400,
+    fallSpeed: 520
+  }
+);
+
+// Left recovery ledge.
+createLevel4Platform(
+  scene,
+  700,
+  floorY(13) - 610,
+  500,
+  0x59636b,
+  ''
+);
+
+// Exit elevator on the LEFT.
+const maintenanceElevator = createLevel4Elevator(
+  scene,
+  350,
+  floorY(13) - 655,
+  floorY(15) - 45,
+  'freight'
+);
+
+maintenanceElevator.state = 'waiting';
+maintenanceElevator.direction = -1;
+maintenanceElevator.moveAgainAt = scene.time.now + 1800;
+
+// =========================================================
+// OPTIONAL MAINTENANCE FAN-LAUNCH SECRET
+// This is now separated from the required HVAC challenge.
+// =========================================================
+
+// Small side ledge that requires an intentional jump.
+createLevel4Platform(
+  scene,
+  2920,
+  floorY(13) - 300,
+  180,
+  0x75643f,
+  ''
+);
+
+// Optional launcher.
+createLevel4SecretFanLauncher(
+  scene,
+  3000,
+  floorY(13) - 520,
+  170,
+  300
+);
+
+// Hidden reward ledge.
+createLevel4Platform(
+  scene,
+  2550,
+  floorY(13) - 1080,
+  460,
+  0x75643f,
+  ''
+);
+
+spawnPickup(
+  scene,
+  2450,
+  floorY(13) - 1160,
+  'pointsLarge'
+);
+
+spawnPickup(
+  scene,
+  2550,
+  floorY(13) - 1160,
+  'pointsLarge'
+);
+
+spawnPickup(
+  scene,
+  2650,
+  floorY(13) - 1160,
+  'pointsLarge'
+);
+
+spawnPickup(
+  scene,
+  2550,
+  floorY(13) - 1250,
+  'upgrade'
+);
+
+// Small elevator reconnects with the window-washer room.
+const maintenanceSecretElevator = createLevel4Elevator(
+  scene,
+  2250,
+  floorY(13) - 1080,
+  floorY(15) - 45,
+  'normal'
+);
+
+maintenanceSecretElevator.state = 'waiting';
+maintenanceSecretElevator.direction = -1;
+maintenanceSecretElevator.moveAgainAt =
+  scene.time.now + 1800;
+// =========================================================
+// ROOM 8 — WINDOW-WASHER CROSSING / FLOORS 14–15
+// Arrival LEFT. Three separated moving lifts lead RIGHT.
+// =========================================================
+createLevel4FloorLabel(scene, 14, floorY(14));
+createLevel4FloorLabel(scene, 15, floorY(15));
+
+createLevel4Platform(
+  scene,
+  400,
+  floorY(15),
+  550,
+  0x3e5668,
+  ''
+);
+
+// These use the existing elevator behavior but only travel
+// short distances, acting like window-washer platforms.
+createLevel4Elevator(
+  scene,
+  950,
+  floorY(15) + 120,
+  floorY(15) - 180,
+  'normal'
+);
+
+createLevel4Elevator(
+  scene,
+  1550,
+  floorY(15) - 40,
+  floorY(15) - 340,
+  'express'
+);
+
+createLevel4Elevator(
+  scene,
+  2150,
+  floorY(15) - 200,
+  floorY(15) - 500,
+  'normal'
+);
+
+// Crosswind affects the jumps between lifts.
+createLevel4SideFan(
+  scene,
+  1250,
+  floorY(15) - 170,
+  500,
+  420,
+  1,
+  280
+);
+
+createLevel4SideFan(
+  scene,
+  1850,
+  floorY(15) - 330,
+  500,
+  420,
+  -1,
+  320
+);
+
+// Right exit ledge.
+createLevel4Platform(
+  scene,
+  2700,
+  floorY(15) - 470,
+  650,
+  0x3e5668,
+  ''
+);
+
+const windowWasherExit = createLevel4Elevator(
+  scene,
+  2875,
+  floorY(15) - 515,
+  floorY(17) - 45,
+  'express'
+);
+
+windowWasherExit.state = 'waiting';
+windowWasherExit.direction = -1;
+windowWasherExit.moveAgainAt = scene.time.now + 1800;
+
+// =========================================================
+// ROOM 8 ENEMIES
+// =========================================================
+
+spawnBat(
+  scene,
+  1250,
+  floorY(15) - 420,
+  1000,
+  1500,
+  1
+);
+
+spawnBat(
+  scene,
+  2250,
+  floorY(15) - 620,
+  2000,
+  2500,
+  -1
+);
+// =========================================================
+// ROOM 9 — EXECUTIVE OFFICE / FLOOR 17
+// Second major interior combat floor.
+// Enter RIGHT, exit LEFT.
+// =========================================================
+createLevel4FloorLabel(scene, 16, floorY(16));
+createLevel4FloorLabel(scene, 17, floorY(17));
+
+createLevel4InteriorFloor(
+  scene,
+  1500,
+  floorY(17),
+  2800,
+  'officeOpen03'
+);
+// =========================================================
+// FLOOR 17 — EXECUTIVE OFFICE ENEMIES
+// =========================================================
+
+spawnBat(
+  scene,
+  750,
+  floorY(17) - 220,
+  450,
+  1100,
+  1
+);
+
+spawnBat(
+  scene,
+  2150,
+  floorY(17) - 240,
+  1850,
+  2500,
+  -1
+);
+
+spawnJunkFoodDrone(
+  scene,
+  1500,
+  floorY(17) - 275,
+  {
+    leftBound: 1250,
+    rightBound: 1750,
+    direction: -1,
+    shootCooldown: 2000
+  }
+);
+
+const executiveExitElevator = createLevel4Elevator(
+  scene,
+  350,
+  floorY(17) - 45,
+  floorY(18) - 45,
+  'normal'
+);
+
+executiveExitElevator.state = 'waiting';
+executiveExitElevator.direction = -1;
+executiveExitElevator.moveAgainAt = scene.time.now + 2000;
+
+// =========================================================
+// ROOM 10 — HVAC MASTER AIR-BURST CLIMB
+// Three timed bursts launch the player between fixed ledges.
+// Missing a burst means falling several floors.
+// =========================================================
+createLevel4FloorLabel(scene, 18, floorY(18));
+createLevel4FloorLabel(scene, 19, floorY(19));
+
+// Starting ledge.
+createLevel4Platform(
+  scene,
+  400,
+  floorY(18),
+  550,
+  0x3e5668,
+  ''
+);
+
+
+// =========================================================
+// AIR BURST 1
+// =========================================================
+
+// Small platform over the first vent.
+createLevel4OutsidePlatform(
+  scene,
+  900,
+  floorY(18) + 40,
+  240
+);
+
+// Launches player to Landing 1.
+createLevel4AirBurst(
+  scene,
+  900,
+  floorY(18) - 160,
+  230,
+  420,
+  {
+    launchVelocity: -930,
+    activeDuration: 1100,
+    inactiveDuration: 1300,
+    startOffset: 0
+  }
+);
+
+// Landing after Burst 1.
+createLevel4Platform(
+  scene,
+  1375,
+  floorY(18) - 330,
+  300,
+  0x3e5668,
+  ''
+);
+
+
+// =========================================================
+// AIR BURST 2
+// =========================================================
+
+// Platform over the second vent.
+createLevel4Platform(
+  scene,
+  1625,
+  floorY(18) - 300,
+  230,
+  0x3e5668,
+  ''
+);
+
+// Staggered so it turns on after Burst 1.
+createLevel4AirBurst(
+  scene,
+  1625,
+  floorY(18) - 500,
+  220,
+  420,
+  {
+    launchVelocity: -950,
+    activeDuration: 1100,
+    inactiveDuration: 1300,
+    startOffset: 800
+  }
+);
+
+// Landing after Burst 2.
+createLevel4Platform(
+  scene,
+  2050,
+  floorY(18) - 675,
+  280,
+  0x3e5668,
+  ''
+);
+
+
+// =========================================================
+// AIR BURST 3
+// =========================================================
+
+// Platform over the final vent.
+createLevel4Platform(
+  scene,
+  2280,
+  floorY(18) - 645,
+  220,
+  0x3e5668,
+  ''
+);
+
+// Final burst is delayed another step.
+createLevel4AirBurst(
+  scene,
+  2280,
+  floorY(18) - 845,
+  210,
+  420,
+  {
+    launchVelocity: -970,
+    activeDuration: 1200,
+    inactiveDuration: 1300,
+    startOffset: 1600
+  }
+);
+
+// Wind fights the player's final airborne movement.
+createLevel4SideFan(
+  scene,
+  2510,
+  floorY(18) - 850,
+  320,
+  430,
+  -1,
+  300
+);
+
+// Final landing and rooftop-elevator ledge.
+createLevel4Platform(
+  scene,
+  2800,
+  floorY(18) - 1000,
+  500,
+  0x3e5668,
+  ''
+);
+
+// Final elevator to rooftop.
+const rooftopElevator = createLevel4Elevator(
+  scene,
+  2875,
+  floorY(18) - 1045,
+  floorY(20) - 45,
+  'normal'
+);
+
+rooftopElevator.state = 'waiting';
+rooftopElevator.direction = -1;
+rooftopElevator.moveAgainAt = scene.time.now + 2000;
+
+
+// =========================================================
+// ROOM 11 — ROOFTOP / FLOOR 20
+// No boss. Reach the zip line and leave for Level 5.
+// =========================================================
+createLevel4FloorLabel(scene, 20, floorY(20));
+
+createLevel4Platform(
+  scene,
+  1600,
+  floorY(20),
+  2750,
+  0x59636b,
+  'ROOFTOP — ZIP LINE EXIT'
+);
+
+level4ExitTrigger = scene.add.rectangle(
+  2850,
+  floorY(20) - 90,
+  180,
+  220,
+  0x44ff44,
+  0.65
+);
+
+scene.physics.add.existing(
+  level4ExitTrigger,
+  true
+);
+
+scene.physics.add.overlap(
+  player,
+  level4ExitTrigger,
+  enterLevel4Exit,
+  null,
+  scene
+);
+
+const exitText = scene.add.text(
+  2850,
+  floorY(20) - 220,
+  'ZIP LINE\nTO CONSTRUCTION SITE',
+  {
+    fontSize: '22px',
+    fill: '#55ff55',
+    align: 'center',
+    stroke: '#000000',
+    strokeThickness: 4
+  }
+);
+
+exitText.setOrigin(0.5, 0.5);
+exitText.setDepth(50);
+
+  // =========================================================
+  // STREET HAZARDS
+  // =========================================================
+  createLevel4Car(
+  scene,
+  250,
+  LEVEL4_STREET_Y - 65,
+  1,
+  250,
+  'cityCar'
+);
+
+createLevel4Car(
+  scene,
+  2150,
+  LEVEL4_STREET_Y - 65,
+  -1,
+  290,
+  'cityCab'
+);
+
+createLevel4Car(
+  scene,
+  2950,
+  LEVEL4_STREET_Y - 65,
+  1,
+  330,
+  'cityPolice'
+);
+
+  // Reuse steam trap behavior from Level 1.
+  level4SteamTraps = [];
+  steamTraps = level4SteamTraps;
+
+  // Steam comes from the manholes already drawn into the street assets.
+if (level4StreetManholeXs[1] !== undefined) {
+  spawnSteamTrap(
+    scene,
+    level4StreetManholeXs[1] - 20,
+LEVEL4_STREET_Y - 78,
+    { startOffset: 0 }
+  );
+}
+
+if (level4StreetManholeXs[2] !== undefined) {
+  spawnSteamTrap(
+    scene,
+    level4StreetManholeXs[2] - 20,
+LEVEL4_STREET_Y - 78,
+    { startOffset: 1200 }
+  );
+}
+
+  // Street slimes.
+  const streetSlimeBody = {
+    width: 0.70,
+    height: 0.55,
+    offsetX: 0.15,
+    offsetY: 0.05
+  };
+
+  spawnSlime(
+    scene,
+    1350,
+    LEVEL4_STREET_Y - 130,
+    level4Street,
+    1150,
+    1550,
+    1,
+    streetSlimeBody
+  );
+
+  spawnSlime(
+    scene,
+    2500,
+    LEVEL4_STREET_Y - 130,
+    level4Street,
+    2300,
+    2700,
+    -1,
+    streetSlimeBody
+  );
+}
+
+
+// =========================
+// LEVEL 4: CREATE
+// =========================
+function createLevel4() {
+
+  currentLevel = 'level4';
+  levelTransitioning = false;
+
+  this.cameras.main.setBackgroundColor('#07111f');
+
+  level4Platforms = [];
+level4Elevators = [];
+level4Cars = [];
+level4SteamTraps = [];
+level4DropPlatforms = [];
+level4FanPlatforms = [];
+level4FanSequenceStartedAt = this.time.now;
+level4SideFanZones = [];
+level4AirBursts = [];
+
+  slimes = [];
+  bats = [];
+  swoopBats = [];
+  junkFoodGoblins = [];
+  junkFoodDrones = [];
+  reclinerChargers = [];
+  pickups = [];
+  steamTraps = [];
+
+  activeUpgrade = null;
+
+  if (upgradeText) {
+    upgradeText.destroy();
+    upgradeText = null;
+  }
+
+ // Level 4 office-building artwork.
+createLevel4BuildingArt(this);
+
+  player = createPlayer(
+    this,
+    level4CheckpointX,
+    level4CheckpointY
+  );
+
+  bullets = this.physics.add.group();
+  casings = this.physics.add.group();
+
+  jfgoblinCans = this.physics.add.group();
+  junkFoodDroneProjectiles = this.physics.add.group();
+
+  cursors = this.input.keyboard.createCursorKeys();
+
+  fireKey = this.input.keyboard.addKey(
+    Phaser.Input.Keyboard.KeyCodes.SPACE
+  );
+
+  restartKey = this.input.keyboard.addKey(
+    Phaser.Input.Keyboard.KeyCodes.R
+  );
+
+  invincibleKey = this.input.keyboard.addKey(
+    Phaser.Input.Keyboard.KeyCodes.I
+  );
+
+  createLevel4Tower(this);
+
+  this.physics.world.setBounds(
+    0,
+    0,
+    LEVEL4_WIDTH,
+    LEVEL4_HEIGHT
+  );
+
+  this.cameras.main.setBounds(
+    0,
+    0,
+    LEVEL4_WIDTH,
+    LEVEL4_HEIGHT
+  );
+
+  this.cameras.main.startFollow(
+    player,
+    true,
+    0.08,
+    0.08
+  );
+
+  this.cameras.main.setDeadzone(220, 180);
+
+  createGameOverScreen(this);
+  createHUD(this);
+  createFadeScreen(this);
+}
+
+
+// =========================
+// LEVEL 4: UPDATE
+// =========================
+function updateLevel4() {
+
+  if (Phaser.Input.Keyboard.JustDown(invincibleKey)) {
+    debugInvincible = !debugInvincible;
+
+    console.log(
+      'Invincibility:',
+      debugInvincible ? 'ON' : 'OFF'
+    );
+  }
+
+  if (playerIsDead) {
+  player.setVelocityX(0);
+  player.setTexture('playerDead');
+
+  updateLevel4Elevators(this);
+  updateLevel4Cars();
+  updateLevel4DropPlatforms(this);
+  updateLevel4FanPlatforms(this);
+  updateLevel4SideFans(this);
+  updateLevel4AirBursts(this);
+
+  level4SteamTraps.forEach(trap => {
+    updateSteamTrap(this, trap);
+  });
+
+  return;
+}
+const playerGrounded =
+  player.body.blocked.down ||
+  player.body.touching.down;
+  if (cursors.left.isDown || moveLeft) {
+    player.setVelocityX(-300);
+    player.setFlipX(true);
+
+  } else if (cursors.right.isDown || moveRight) {
+    player.setVelocityX(300);
+    player.setFlipX(false);
+
+  } else {
+    player.setVelocityX(0);
+  }
+
+  if (
+  (cursors.up.isDown || jumpPressed) &&
+  playerGrounded
+) {
+  player.setVelocityY(-600);
+}
+
+  playerIsCrouching =
+  (cursors.down.isDown || crouchPressed) &&
+  playerGrounded;
+
+  if (playerIsCrouching) {
+    setPlayerCrouchBody();
+    player.setVelocityX(0);
+    player.setTexture('playerCrouch');
+
+  } else {
+    setPlayerStandingBody();
+
+    if (!playerGrounded) {
+
+      if (player.body.velocity.y < -100) {
+        player.setTexture('playerJump1');
+
+      } else if (player.body.velocity.y <= 100) {
+        player.setTexture('playerJump2');
+
+      } else {
+        player.setTexture('playerJump3');
+      }
+
+    } else if (
+      cursors.left.isDown ||
+      cursors.right.isDown ||
+      moveLeft ||
+      moveRight
+    ) {
+      player.play('run', true);
+
+    } else {
+      player.play('idle', true);
+    }
+  }
+
+  if (
+    Phaser.Input.Keyboard.JustDown(fireKey) &&
+    !playerIsDead
+  ) {
+    firePlayerBullet(this);
+  }
+
+  if (
+    activeUpgrade === 'firerate' &&
+    !playerIsDead &&
+    (fireKey.isDown || firePressed)
+  ) {
+    firePlayerBullet(this);
+  }
+
+  updateLevel4Elevators(this);
+updateLevel4Cars();
+updateLevel4DropPlatforms(this);
+updateLevel4FanPlatforms(this);
+updateLevel4SideFans(this);
+updateLevel4AirBursts(this);
+
+  level4SteamTraps.forEach(trap => {
+    updateSteamTrap(this, trap);
+  });
+// =========================
+// LEVEL 4 ENEMY UPDATES
+// =========================
+bats.forEach(bat => {
+  patrolBat(bat, 180, this);
+});
+
+junkFoodDrones.forEach(drone => {
+  updateJunkFoodDrone(this, drone);
+});
+  slimes.forEach(slime => {
+    patrolSlime(slime, 60);
+  });
+
+  cullOffscreenBullets(this);
+
+  updateHomingBullets(
+    this,
+    [
+      ...slimes,
+      ...junkFoodDrones
+    ]
+  );
+
+  updateActiveUpgrade(this);
+
+  pickups.forEach(pickup => {
+    updatePickup(this, pickup);
+  });
+
+  settleCasings();
+}
+
+
+// =========================
+// LEVEL 4: ZIP-LINE EXIT
+// =========================
+function enterLevel4Exit(playerObject, exitObject) {
+
+  if (levelTransitioning || playerIsDead) {
+    return;
+  }
+
+  levelTransitioning = true;
+
+  playerObject.setVelocity(0, 0);
+
+  playerObject.scene.tweens.add({
+    targets: fadeScreen,
+    alpha: 1,
+    duration: 900,
+    onComplete: () => {
+      console.log(
+        'Level 4 complete — construction level next.'
+      );
     }
   });
 }
