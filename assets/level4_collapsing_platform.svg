@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="48" viewBox="0 0 256 48">
+  <defs>
+    <linearGradient id="steel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#89939a"/>
+      <stop offset="0.35" stop-color="#4f5960"/>
+      <stop offset="1" stop-color="#252b2f"/>
+    </linearGradient>
+    <pattern id="grate" width="24" height="24" patternUnits="userSpaceOnUse">
+      <rect width="24" height="24" fill="#24292d"/>
+      <path d="M0 0L24 24M24 0L0 24" stroke="#59636a" stroke-width="2"/>
+    </pattern>
+  </defs>
+  <rect x="2" y="4" width="252" height="34" rx="3" fill="url(#steel)" stroke="#111619" stroke-width="4"/>
+  <rect x="10" y="9" width="236" height="22" fill="url(#grate)" stroke="#9aa2a7" stroke-width="2"/>
+  <path d="M14 36H242" stroke="#d0a642" stroke-width="5"/>
+  <path d="M18 34l12 4 12-4 12 4 12-4 12 4 12-4 12 4 12-4 12 4 12-4 12 4 12-4 12 4 12-4 12 4 12-4 12 4" fill="none" stroke="#171a1c" stroke-width="3"/>
+  <g fill="#c8cdd0" stroke="#202529" stroke-width="2">
+    <circle cx="12" cy="21" r="4"/><circle cx="244" cy="21" r="4"/>
+  </g>
+  <path d="M118 5l-7 12 9 5-8 15M137 5l5 10-8 7 9 15" fill="none" stroke="#161a1d" stroke-width="3"/>
+</svg>
