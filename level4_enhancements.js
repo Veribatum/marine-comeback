@@ -1,29 +1,20 @@
 // =========================================================
 // LEVEL 4 ENHANCEMENTS
-// Collapsing-platform visuals + elevator pacing pass.
-// Kept separate from main.js so this pass is easy to tune/remove.
+// Collapsing-platform visuals + elevator pacing + wind checkpoint.
 // =========================================================
 
 (function () {
-  // God mode ON while Level 4 is being playtested. The existing I-key
-  // toggle still works normally if damage testing is needed.
   debugInvincible = true;
 
   // ---------------------------------------------------------
   // COLLAPSING PLATFORM VISUAL
   // ---------------------------------------------------------
-  // main.js already owns the actual drop/reset physics. We leave that
-  // untouched and attach a visible industrial catwalk sprite to each
-  // invisible/placeholder platform, following its x/y every frame.
   const originalCreateDropPlatform = createLevel4DropPlatform;
 
   function ensureCollapseTexture(scene) {
     if (scene.textures.exists('level4CollapsePlatform')) return;
-
     const texture = scene.textures.createCanvas('level4CollapsePlatform', 256, 48);
     const ctx = texture.getContext();
-
-    // Dark steel body.
     const steel = ctx.createLinearGradient(0, 0, 0, 48);
     steel.addColorStop(0, '#89939a');
     steel.addColorStop(0.35, '#4f5960');
@@ -33,115 +24,138 @@
     ctx.lineWidth = 4;
     ctx.fillRect(2, 4, 252, 34);
     ctx.strokeRect(2, 4, 252, 34);
-
-    // Cross-braced grate.
     ctx.fillStyle = '#24292d';
     ctx.fillRect(10, 9, 236, 22);
     ctx.strokeStyle = '#59636a';
     ctx.lineWidth = 2;
     for (let x = 10; x < 246; x += 24) {
       ctx.beginPath();
-      ctx.moveTo(x, 9);
-      ctx.lineTo(x + 24, 31);
-      ctx.moveTo(x + 24, 9);
-      ctx.lineTo(x, 31);
+      ctx.moveTo(x, 9); ctx.lineTo(x + 24, 31);
+      ctx.moveTo(x + 24, 9); ctx.lineTo(x, 31);
       ctx.stroke();
     }
-
-    // Worn yellow hazard edge.
     ctx.strokeStyle = '#d0a642';
     ctx.lineWidth = 5;
-    ctx.beginPath();
-    ctx.moveTo(12, 37);
-    ctx.lineTo(244, 37);
-    ctx.stroke();
-
-    // Cracks make it readable as the unstable platform.
+    ctx.beginPath(); ctx.moveTo(12, 37); ctx.lineTo(244, 37); ctx.stroke();
     ctx.strokeStyle = '#161a1d';
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.moveTo(118, 5); ctx.lineTo(111, 17); ctx.lineTo(120, 22); ctx.lineTo(112, 37);
     ctx.moveTo(137, 5); ctx.lineTo(142, 15); ctx.lineTo(134, 22); ctx.lineTo(143, 37);
     ctx.stroke();
-
     texture.refresh();
   }
 
   createLevel4DropPlatform = function (scene, x, y, width, options = {}) {
     const platform = originalCreateDropPlatform(scene, x, y, width, options);
     ensureCollapseTexture(scene);
-
-    // Hide the old brown rectangle but keep its physics body active.
     platform.setAlpha(0);
-
     const visual = scene.add.image(x, y, 'level4CollapsePlatform');
     visual.setDisplaySize(width, 48);
     visual.setDepth(8);
-
-    scene.events.on('update', function syncCollapsePlatformVisual() {
+    scene.events.on('update', function () {
       if (!platform || !platform.active || !visual || !visual.active) return;
       visual.x = platform.x;
       visual.y = platform.y;
       visual.visible = platform.visible !== false;
-
-      // During the warning shake, tint slightly warmer so the player gets
-      // a visual cue without adding another HUD message.
-      if (platform.state === 'shaking') {
-        visual.setTint(0xffd27a);
-      } else {
-        visual.clearTint();
-      }
+      if (platform.state === 'shaking') visual.setTint(0xffd27a);
+      else visual.clearTint();
     });
-
     return platform;
   };
 
   // ---------------------------------------------------------
-  // ELEVATOR PACING / VARIETY
+  // ELEVATORS
   // ---------------------------------------------------------
-  // The tower already uses normal, freight and express elevators. Give
-  // those labels meaningful pacing instead of letting long rides all feel
-  // alike. Explicit moveSpeed values in main.js still win.
+  // All normal progression elevators now use the same fast speed.
+  // The three short window-washer elevators around x 950/1550/2150 on
+  // Floor 15 are the intentional jumping puzzle and keep their original
+  // individual speeds.
   const originalCreateElevator = createLevel4Elevator;
+  const STANDARD_ELEVATOR_SPEED = 520;
 
-  createLevel4Elevator = function (
-    scene,
-    x,
-    bottomY,
-    topY,
-    type = 'normal',
-    options = {}
-  ) {
-    const tunedOptions = Object.assign({}, options);
+  createLevel4Elevator = function (scene, x, bottomY, topY, type = 'normal') {
+    const elevator = originalCreateElevator(scene, x, bottomY, topY, type);
 
-    if (tunedOptions.moveSpeed == null) {
-      if (type === 'express') {
-        tunedOptions.moveSpeed = 600;
-      } else if (type === 'freight') {
-        tunedOptions.moveSpeed = 390;
-      } else {
-        tunedOptions.moveSpeed = 460;
-      }
-    }
-
-    const elevator = originalCreateElevator(
-      scene,
-      x,
-      bottomY,
-      topY,
-      type,
-      tunedOptions
-    );
-
-    // Long late-game rides get a small speed bonus so they do not become
-    // dead time. Short window-washer lifts keep their normal character.
     const travelDistance = Math.abs(bottomY - topY);
-    if (travelDistance > 900 && type !== 'express') {
-      elevator.moveSpeed = Math.max(elevator.moveSpeed, 520);
+    const isWindowWasherPuzzle =
+      travelDistance <= 360 &&
+      (Math.abs(x - 950) < 20 || Math.abs(x - 1550) < 20 || Math.abs(x - 2150) < 20);
+
+    if (!isWindowWasherPuzzle) {
+      elevator.speed = STANDARD_ELEVATOR_SPEED;
+      elevator.waitTime = 850;
+      elevator.moveAgainAt = scene.time.now + elevator.waitTime;
     }
 
     return elevator;
   };
+
+  // ---------------------------------------------------------
+  // WIND-TUNNEL CHECKPOINT
+  // ---------------------------------------------------------
+  // Activate when the player reaches the left entrance of Floor 11.
+  // Existing Level 4 death handling already respawns at these globals.
+  function installWindCheckpoint(scene) {
+    const floor11Y = LEVEL4_STREET_Y - (10 * LEVEL4_FLOOR_SPACING);
+    const trigger = scene.add.zone(300, floor11Y - 70, 300, 220);
+    scene.physics.add.existing(trigger, true);
+    let activated = false;
+
+    scene.physics.add.overlap(player, trigger, function () {
+      if (activated) return;
+      activated = true;
+      level4CheckpointX = 300;
+      level4CheckpointY = floor11Y - 90;
+
+      const text = scene.add.text(300, floor11Y - 155, 'CHECKPOINT', {
+        fontSize: '24px',
+        fill: '#ffd84a',
+        stroke: '#000000',
+        strokeThickness: 5
+      }).setOrigin(0.5).setDepth(80);
+
+      scene.tweens.add({ targets: text, alpha: 0, y: text.y - 35, duration: 1300, delay: 500, onComplete: () => text.destroy() });
+      console.log('[Level 4] wind tunnel checkpoint activated');
+    });
+  }
+
+  // ---------------------------------------------------------
+  // HARDER WIND-TUNNEL BLAST
+  // ---------------------------------------------------------
+  // Identify the giant Floor-11 timed blast after the scene has built it.
+  // Increase only that hazard; smaller tutorial fans remain unchanged.
+  function tuneWindTunnel() {
+    if (!Array.isArray(level4SideFans)) return;
+    level4SideFans.forEach(fan => {
+      if (!fan || !fan.blastMode || !fan.timed) return;
+      if (fan.body && fan.body.width > 2000) {
+        fan.pushStrength = Math.max(fan.pushStrength, 1650);
+        fan.activeDuration = 2000;
+        fan.inactiveDuration = 1250;
+      }
+    });
+  }
+
+  function installSceneEnhancements() {
+    let scene = null;
+    try { scene = game.scene.getScene('Level4Scene'); } catch (_) { return false; }
+    if (!scene) return false;
+
+    const apply = function () {
+      installWindCheckpoint(scene);
+      tuneWindTunnel();
+      console.log('[Level 4] wind checkpoint + harder tunnel + elevator retune applied');
+    };
+
+    if (scene.sys && scene.sys.isActive() && scene.sys.settings.status === Phaser.Scenes.RUNNING) apply();
+    else scene.events.once(Phaser.Scenes.Events.CREATE, apply);
+    return true;
+  }
+
+  const installTimer = window.setInterval(function () {
+    if (installSceneEnhancements()) window.clearInterval(installTimer);
+  }, 50);
 
   console.log('[Level 4] collapse visuals + elevator pacing enhancements loaded');
 })();
