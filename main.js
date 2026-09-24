@@ -5,7 +5,33 @@
 // =========================
 // GLOBAL VARIABLES
 // =========================
-let player;
+let player;VISUAL VALIDATION ONLY — NO REBUILD, NO EXPORT
+
+Play both complete swap animations repeatedly at normal playback speed in Blender:
+
+Nova_Swap_Pistol_To_Rifle
+Nova_Swap_Rifle_To_Pistol
+
+Review from:
+
+rear 3/4 gameplay-style angle
+right-side angle
+
+Focus ONLY on:
+
+whether the 48° RightArm step visibly snaps
+whether the 53° grip-contact wrist bend looks anatomically wrong
+whether the elbow visibly leads the reach
+whether the hand returns down the front/right side naturally
+whether the shoulder looks connected throughout
+
+Do not edit anything unless one of those flaws is clearly visible at normal speed.
+
+If a flaw is visible, identify the exact frame range and joint causing it before changing anything.
+
+DO NOT EXPORT TO GODOT.
+
+Stop after the visual assessment and report PASS/FAIL for each item.
 let cursors;
 let bullets;
 let casings;
@@ -529,7 +555,6 @@ this.load.image('reclinerTyrantHitEffect', 'assets/recliner_tyrant_hiteffct.png'
 // =========================
 this.load.image('officeStreet', 'assets/office_street.png');
 this.load.image('officeGarage', 'assets/office_garage.png');
-this.load.image('officeGarageFront', 'assets/office_garage_front.png');
 this.load.image('officeBase', 'assets/office_base.png');
 this.load.image('officeWindows', 'assets/office_windows.png');
 
