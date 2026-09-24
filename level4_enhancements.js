@@ -67,16 +67,11 @@
   // ---------------------------------------------------------
   // ELEVATORS
   // ---------------------------------------------------------
-  // All normal progression elevators now use the same fast speed.
-  // The three short window-washer elevators around x 950/1550/2150 on
-  // Floor 15 are the intentional jumping puzzle and keep their original
-  // individual speeds.
   const originalCreateElevator = createLevel4Elevator;
   const STANDARD_ELEVATOR_SPEED = 520;
 
   createLevel4Elevator = function (scene, x, bottomY, topY, type = 'normal') {
     const elevator = originalCreateElevator(scene, x, bottomY, topY, type);
-
     const travelDistance = Math.abs(bottomY - topY);
     const isWindowWasherPuzzle =
       travelDistance <= 360 &&
@@ -87,15 +82,12 @@
       elevator.waitTime = 850;
       elevator.moveAgainAt = scene.time.now + elevator.waitTime;
     }
-
     return elevator;
   };
 
   // ---------------------------------------------------------
   // WIND-TUNNEL CHECKPOINT
   // ---------------------------------------------------------
-  // Activate when the player reaches the left entrance of Floor 11.
-  // Existing Level 4 death handling already respawns at these globals.
   function installWindCheckpoint(scene) {
     const floor11Y = LEVEL4_STREET_Y - (10 * LEVEL4_FLOOR_SPACING);
     const trigger = scene.add.zone(300, floor11Y - 70, 300, 220);
@@ -115,25 +107,15 @@
         strokeThickness: 5
       }).setOrigin(0.5).setDepth(80);
 
-      scene.tweens.add({ targets: text, alpha: 0, y: text.y - 35, duration: 1300, delay: 500, onComplete: () => text.destroy() });
+      scene.tweens.add({
+        targets: text,
+        alpha: 0,
+        y: text.y - 35,
+        duration: 1300,
+        delay: 500,
+        onComplete: () => text.destroy()
+      });
       console.log('[Level 4] wind tunnel checkpoint activated');
-    });
-  }
-
-  // ---------------------------------------------------------
-  // HARDER WIND-TUNNEL BLAST
-  // ---------------------------------------------------------
-  // Identify the giant Floor-11 timed blast after the scene has built it.
-  // Increase only that hazard; smaller tutorial fans remain unchanged.
-  function tuneWindTunnel() {
-    if (!Array.isArray(level4SideFans)) return;
-    level4SideFans.forEach(fan => {
-      if (!fan || !fan.blastMode || !fan.timed) return;
-      if (fan.body && fan.body.width > 2000) {
-        fan.pushStrength = Math.max(fan.pushStrength, 1650);
-        fan.activeDuration = 2000;
-        fan.inactiveDuration = 1250;
-      }
     });
   }
 
@@ -144,8 +126,7 @@
 
     const apply = function () {
       installWindCheckpoint(scene);
-      tuneWindTunnel();
-      console.log('[Level 4] wind checkpoint + harder tunnel + elevator retune applied');
+      console.log('[Level 4] wind checkpoint + elevator retune applied');
     };
 
     if (scene.sys && scene.sys.isActive() && scene.sys.settings.status === Phaser.Scenes.RUNNING) apply();
