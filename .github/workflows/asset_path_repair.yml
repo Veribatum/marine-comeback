@@ -1,0 +1,56 @@
+name: One-time source repair
+
+on:
+  create:
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.event.ref_type == 'branch' && github.event.ref == 'trigger-asset-path-repair'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Correct five stale asset paths
+        shell: python
+        run: |
+          from pathlib import Path
+
+          path = Path('main.js')
+          text = path.read_text(encoding='utf-8')
+
+          replacements = {
+              'assets/vending.png': 'assets/Vending.png',
+              'assets/city_police.png': 'assets/city_Police.png',
+              'assets/office_garage_front.png': 'assets/office_garage.png',
+              'assets/office_platform.png': 'assets/city_railing.png',
+              'assets/medgust 4.png': 'assets/medgust4.png',
+          }
+
+          for old, new in replacements.items():
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f'Expected exactly one occurrence of {old!r}; found {count}')
+              text = text.replace(old, new)
+
+          path.write_text(text, encoding='utf-8')
+
+      - name: Commit only the source repair and remove runner
+        run: |
+          rm .github/workflows/asset_path_repair.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add main.js .github/workflows/asset_path_repair.yml
+          git diff --cached --check
+          git commit -m "Fix five stale asset references in main.js"
+          git push origin HEAD:main
+
+      - name: Remove trigger branch
+        if: always()
+        run: git push origin --delete trigger-asset-path-repair || true
