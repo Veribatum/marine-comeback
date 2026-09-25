@@ -414,8 +414,8 @@ function preload() {
   // =========================
   // CITY Props
   // =========================
-  this.load.image('vendingMachine', 'assets/vending.png');
-  this.load.image('cityPolice', 'assets/city_police.png');
+  this.load.image('vendingMachine', 'assets/Vending.png');
+  this.load.image('cityPolice', 'assets/city_Police.png');
   this.load.image('cityCab', 'assets/city_cab.png');
   this.load.image('cityCar', 'assets/city_car.png');
   this.load.image('barricade', 'assets/barricade.png');
@@ -529,7 +529,7 @@ this.load.image('reclinerTyrantHitEffect', 'assets/recliner_tyrant_hiteffct.png'
 // =========================
 this.load.image('officeStreet', 'assets/office_street.png');
 this.load.image('officeGarage', 'assets/office_garage.png');
-this.load.image('officeGarageFront', 'assets/office_garage_front.png');
+this.load.image('officeGarageFront', 'assets/office_garage.png');
 this.load.image('officeBase', 'assets/office_base.png');
 this.load.image('officeWindows', 'assets/office_windows.png');
 
@@ -538,7 +538,7 @@ this.load.image('officeOpen02', 'assets/office_open_02.png');
 this.load.image('officeOpen03', 'assets/office_open_03.png');
 
 this.load.image('officePainterPlatform', 'assets/office_painterplatform.png');
-this.load.image('officePlatform', 'assets/office_platform.png');
+this.load.image('officePlatform', 'assets/city_railing.png');
 // =========================
 // LEVEL 4 — WIND FX
 // =========================
@@ -550,7 +550,7 @@ this.load.image('pregust4', 'assets/pregust 4.png');
 this.load.image('medgust1', 'assets/medgust 1.png');
 this.load.image('medgust2', 'assets/medgust 2.png');
 this.load.image('medgust3', 'assets/medgust 3.png');
-this.load.image('medgust4', 'assets/medgust 4.png');
+this.load.image('medgust4', 'assets/medgust4.png');
 
 this.load.image('heavygust1', 'assets/heavygust 1.png');
 this.load.image('heavygust2', 'assets/heavygust 2.png');
