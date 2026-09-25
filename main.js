@@ -6970,16 +6970,16 @@ officeGarage.setDisplaySize(
   1050,
   540
 );
-// Front tunnel wall sits over the cars as they enter.
-const officeGarageFront = scene.add.image(
+// Front tunnel wall/roof sits over the cars as they enter.
+const officeBase = scene.add.image(
   500,
   LEVEL4_STREET_Y - 495,
-  'officeGarage'
+  'officeBase'
 );
 
-officeGarageFront.setOrigin(0.5, 0);
-officeGarageFront.setDepth(16);
-officeGarageFront.setDisplaySize(
+officeBase.setOrigin(0.5, 0);
+officeBase.setDepth(16);
+officeBase.setDisplaySize(
   1050,
   545
 );
