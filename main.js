@@ -529,7 +529,6 @@ this.load.image('reclinerTyrantHitEffect', 'assets/recliner_tyrant_hiteffct.png'
 // =========================
 this.load.image('officeStreet', 'assets/office_street.png');
 this.load.image('officeGarage', 'assets/office_garage.png');
-this.load.image('officeGarageFront', 'assets/office_garage.png');
 this.load.image('officeBase', 'assets/office_base.png');
 this.load.image('officeWindows', 'assets/office_windows.png');
 
@@ -538,7 +537,6 @@ this.load.image('officeOpen02', 'assets/office_open_02.png');
 this.load.image('officeOpen03', 'assets/office_open_03.png');
 
 this.load.image('officePainterPlatform', 'assets/office_painterplatform.png');
-this.load.image('officePlatform', 'assets/city_railing.png');
 // =========================
 // LEVEL 4 — WIND FX
 // =========================
@@ -6976,7 +6974,7 @@ officeGarage.setDisplaySize(
 const officeGarageFront = scene.add.image(
   500,
   LEVEL4_STREET_Y - 495,
-  'officeGarageFront'
+  'officeGarage'
 );
 
 officeGarageFront.setOrigin(0.5, 0);
@@ -7064,7 +7062,7 @@ platform.setDepth(5);
     const artwork = scene.add.image(
   x,
   y - 8,
-  'officePlatform'
+  'cityRailing'
 );
 
     artwork.setOrigin(0.5, 0.5);
@@ -9077,7 +9075,7 @@ createLevel4Platform(
 
 const floor11CatwalkSource =
   scene.textures
-    .get('officePlatform')
+    .get('cityRailing')
     .getSourceImage();
 
 const floor11CatwalkHeight = 90;
@@ -9108,7 +9106,7 @@ for (
   const catwalkPiece = scene.add.image(
     catwalkX,
     floorY(11) - 8,
-    'officePlatform'
+    'cityRailing'
   );
 
   catwalkPiece.setOrigin(0, 0.5);
