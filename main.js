@@ -6955,22 +6955,42 @@ while (streetX < LEVEL4_WIDTH + streetPieceWidth) {
   streetX += streetStep;
 }
 
-  // Parking-garage entrance artwork.
-  // Garage art matches the safe garage-roof platform:
-// platform center x:380, width:700, y:LEVEL4_STREET_Y - 260.
-const officeGarage = scene.add.image(
-  755,
-  LEVEL4_STREET_Y - 495,
+  // Parking-garage / tunnel entrance assembly.
+// Two copies of officeGarage create the car-disappearing-into-tunnel effect:
+// back copy behind traffic, cropped front copy over traffic.
+const LEVEL4_TUNNEL_X = 980;
+const LEVEL4_TUNNEL_Y = LEVEL4_STREET_Y - 495;
+
+const officeGarageBack = scene.add.image(
+  LEVEL4_TUNNEL_X,
+  LEVEL4_TUNNEL_Y,
   'officeGarage'
 );
 
-officeGarage.setOrigin(0.5, 0);
-officeGarage.setDepth(17);
-officeGarage.setDisplaySize(
-  1050,
-  540
+officeGarageBack.setOrigin(0.5, 0);
+officeGarageBack.setDepth(13);
+officeGarageBack.setDisplaySize(1050, 540);
+
+const officeGarageFront = scene.add.image(
+  LEVEL4_TUNNEL_X,
+  LEVEL4_TUNNEL_Y,
+  'officeGarage'
 );
-// Front tunnel wall/roof sits over the cars as they enter.
+
+officeGarageFront.setOrigin(0.5, 0);
+officeGarageFront.setDisplaySize(1050, 540);
+
+const garageSource = scene.textures.get('officeGarage').getSourceImage();
+const garageFrontCropY = Math.floor(garageSource.height * 0.48);
+officeGarageFront.setCrop(
+  0,
+  garageFrontCropY,
+  garageSource.width,
+  garageSource.height - garageFrontCropY
+);
+officeGarageFront.setDepth(15);
+
+// Structural office base remains the tunnel roof/front wall.
 const officeBase = scene.add.image(
   500,
   LEVEL4_STREET_Y - 495,
