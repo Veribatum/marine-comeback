@@ -6959,7 +6959,7 @@ while (streetX < LEVEL4_WIDTH + streetPieceWidth) {
   // Garage art matches the safe garage-roof platform:
 // platform center x:380, width:700, y:LEVEL4_STREET_Y - 260.
 const officeGarage = scene.add.image(
-  555,
+  755,
   LEVEL4_STREET_Y - 495,
   'officeGarage'
 );
