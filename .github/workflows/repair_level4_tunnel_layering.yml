@@ -1,0 +1,94 @@
+name: One-time Level 4 tunnel layering repair
+on:
+  create:
+
+jobs:
+  repair:
+    if: github.ref == 'refs/heads/trigger-level4-tunnel-layering'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Repair tunnel placement and layering
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          p = Path('main.js')
+          s = p.read_text()
+
+          pattern = re.compile(r"  // Parking-garage entrance artwork\..*?officeBase\.setDisplaySize\(\n  1050,\n  545\n\);", re.S)
+
+          replacement = '''  // Parking-garage / tunnel entrance assembly.
+  // Two copies of officeGarage create the car-disappearing-into-tunnel effect:
+  // back copy behind traffic, cropped front copy over traffic.
+  const LEVEL4_TUNNEL_X = 980;
+  const LEVEL4_TUNNEL_Y = LEVEL4_STREET_Y - 495;
+
+  const officeGarageBack = scene.add.image(
+    LEVEL4_TUNNEL_X,
+    LEVEL4_TUNNEL_Y,
+    'officeGarage'
+  );
+
+  officeGarageBack.setOrigin(0.5, 0);
+  officeGarageBack.setDepth(13);
+  officeGarageBack.setDisplaySize(1050, 540);
+
+  const officeGarageFront = scene.add.image(
+    LEVEL4_TUNNEL_X,
+    LEVEL4_TUNNEL_Y,
+    'officeGarage'
+  );
+
+  officeGarageFront.setOrigin(0.5, 0);
+  officeGarageFront.setDisplaySize(1050, 540);
+
+  const garageSource = scene.textures.get('officeGarage').getSourceImage();
+  const garageFrontCropY = Math.floor(garageSource.height * 0.48);
+  officeGarageFront.setCrop(
+    0,
+    garageFrontCropY,
+    garageSource.width,
+    garageSource.height - garageFrontCropY
+  );
+  officeGarageFront.setDepth(15);
+
+  // Structural office base remains the tunnel roof/front wall.
+  const officeBase = scene.add.image(
+    500,
+    LEVEL4_STREET_Y - 495,
+    'officeBase'
+  );
+
+  officeBase.setOrigin(0.5, 0);
+  officeBase.setDepth(16);
+  officeBase.setDisplaySize(
+    1050,
+    545
+  );'''
+
+          s2, count = pattern.subn(replacement, s, count=1)
+          if count != 1:
+              raise SystemExit(f'Expected to replace 1 tunnel block, replaced {count}')
+
+          p.write_text(s2)
+
+          idx = Path('index.html')
+          h = idx.read_text()
+          h = re.sub(r'main\.js\?v=\d+', 'main.js?v=11', h)
+          idx.write_text(h)
+          PY
+      - name: Commit repair and remove workflow
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/repair_level4_tunnel_layering.yml
+          git add main.js index.html
+          git commit -m "Restore Level 4 tunnel entrance placement and car layering"
+          git push origin HEAD:main
